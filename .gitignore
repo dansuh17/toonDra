@@ -1,2 +1,13 @@
 # OSX
 .DS_Store
+
+# android studio
+.idea/
+*.iml
+
+# built files
+build/
+.gradle/
+
+!.gitignore
+local.properties
