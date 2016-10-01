@@ -29,253 +29,57 @@
             android:layout_height="wrap_content">
 
             <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="M"
-                android:id="@+id/button"
-                android:textSize="10dp"
-                android:padding="0dp"
-
-                android:background="#BBBBBB"
-                />
+                style="@style/DayButton"
+                android:text="월"
+                android:id="@+id/button_mon"/>
 
             <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="M"
-                android:id="@+id/button2"
-                android:textSize="10dp"
-                android:padding="0dp"
-
-                android:background="#BBBBBB"/>
+                style="@style/DayButton"
+                android:text="화"
+                android:id="@+id/button_tue"/>
 
             <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="M"
-                android:id="@+id/button3"
-                android:textSize="10dp"
-                android:padding="0dp"
-                android:background="#BBBBBB"/>
+                style="@style/DayButton"
+                android:text="수"
+                android:id="@+id/button_wed"/>
 
             <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="M"
-                android:id="@+id/button4"
-                android:textSize="10dp"
-                android:padding="0dp"
-                android:background="#BBBBBB"/>
+                style="@style/DayButton"
+                android:text="목"
+                android:id="@+id/button_thu"/>
 
             <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="M"
-                android:id="@+id/button5"
-                android:textSize="10dp"
-                android:padding="0dp"
-                android:background="#BBBBBB"/>
+                style="@style/DayButton"
+                android:text="금"
+                android:id="@+id/button_fri"/>
 
             <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="M"
-                android:id="@+id/button6"
-                android:textSize="10dp"
-                android:padding="0dp"
-                android:background="#BBBBBB"/>
+                style="@style/DayButton"
+                android:text="토"
+                android:id="@+id/button_sat"/>
 
             <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="M"
-                android:id="@+id/button7"
-                android:textSize="10dp"
-                android:padding="0dp"
-                android:background="#BBBBBB"/>
+                style="@style/DayButton"
+                android:text="일"
+                android:id="@+id/button_sun"/>
 
             <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="M"
-                android:id="@+id/button8"
-                android:textSize="10dp"
-                android:padding="0dp"
-                android:background="#BBBBBB"/>
+                style="@style/DayButton"
+                android:text="신작"
+                android:id="@+id/button_new"/>
 
             <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="M"
-                android:id="@+id/button9"
-                android:textSize="10dp"
-                android:padding="0dp"
-                android:background="#BBBBBB"/>
+                style="@style/DayButton"
+                android:text="완결"
+                android:id="@+id/button_fin"/>
 
 
         </LinearLayout>
 
-        <LinearLayout
-            android:orientation="horizontal"
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            >
-
-            <ScrollView
-                android:layout_width="120dp"
-                android:layout_height="match_parent"
-                android:id="@+id/scrollView" >
-
-                <LinearLayout
-                    android:orientation="vertical"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent">
-
-                    <LinearLayout
-                        android:id="@+id/linearLayout1"
-                        android:orientation="vertical"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:background="?android:attr/selectableItemBackground">
-
-                        <ImageView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:id="@+id/title_image1"
-                            android:src="@drawable/title_1"
-                            android:adjustViewBounds="true"/>
-
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textAppearance="?android:attr/textAppearanceSmall"
-                            android:text="Small Text"
-                            android:id="@+id/title_text1"
-                            android:layout_gravity="center_horizontal" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/linearLayout2"
-                        android:orientation="vertical"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:background="?android:attr/selectableItemBackground">
-
-                        <ImageView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:id="@+id/title_image2"
-                            android:src="@drawable/title_2"
-                            android:adjustViewBounds="true"/>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textAppearance="?android:attr/textAppearanceSmall"
-                            android:text="Small Text"
-                            android:id="@+id/title_text2" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/linearLayout3"
-                        android:orientation="vertical"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:background="?android:attr/selectableItemBackground">
-
-                        <ImageView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:id="@+id/title_image3"
-                            android:src="@drawable/title_3"
-                            android:adjustViewBounds="true"/>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textAppearance="?android:attr/textAppearanceSmall"
-                            android:text="Small Text"
-                            android:id="@+id/title_text3" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/linearLayout4"
-                        android:orientation="vertical"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:background="?android:attr/selectableItemBackground">
-
-                        <ImageView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:id="@+id/title_image4"
-                            android:src="@drawable/title_4"
-                            android:adjustViewBounds="true"/>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textAppearance="?android:attr/textAppearanceSmall"
-                            android:text="Small Text"
-                            android:id="@+id/title_text4" />
-                    </LinearLayout>
-
-                </LinearLayout>
-            </ScrollView>
-
-            <ScrollView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:id="@+id/scrollView2">
-                <!--android:scrollbars="none"-->
-
-                <LinearLayout
-                    android:orientation="vertical"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent">
-
-                    <ImageView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:id="@+id/imageView2"
-                        android:background="#BBBBBB"
-                        android:src="@drawable/fd_0"
-                        android:adjustViewBounds="true"/>
-
-                    <ImageView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:id="@+id/imageView3"
-                        android:background="#BBBBBB"
-                        android:src="@drawable/fd_1"
-                        android:adjustViewBounds="true"/>
-                    <ImageView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:id="@+id/imageView4"
-                        android:background="#BBBBBB"
-                        android:src="@drawable/fd_2"
-                        android:adjustViewBounds="true"/>
-                    <ImageView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:id="@+id/imageView5"
-                        android:background="#BBBBBB"
-                        android:src="@drawable/fd_3"
-                        android:adjustViewBounds="true"/>
-
-                </LinearLayout>
-            </ScrollView>
-        </LinearLayout>
+            android:name="edu.kaist.mskers.toondra.PreviewModeFragment"
+            android:id="@+id/container"/>
     </LinearLayout>
 </RelativeLayout>
