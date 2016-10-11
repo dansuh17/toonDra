@@ -2,10 +2,10 @@ package edu.kaist.mskers.toondra;
 
 import com.google.android.gms.common.images.Size;
 import com.google.android.gms.vision.CameraSource;
-import com.google.android.gms.vision.MultiProcessor;
 import com.google.android.gms.vision.Tracker;
 import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.FaceDetector;
+import com.google.android.gms.vision.face.LargestFaceFocusingProcessor;
 
 import android.Manifest;
 import android.content.Context;
@@ -71,7 +71,8 @@ public class AutoscrollActivity extends AppCompatActivity implements SurfaceHold
     FaceDetector detector = new FaceDetector.Builder(context)
         .setClassificationType(FaceDetector.ALL_CLASSIFICATIONS)
         .build();
-    detector.setProcessor(new MultiProcessor.Builder<>(new GraphicFaceTrackerFactory()).build());
+    detector.setProcessor(new LargestFaceFocusingProcessor.Builder(detector,
+        new GraphicFaceTracker(graphicOverlay)).build());
     // create a camera source
     cameraSource = new CameraSource.Builder(context, detector)
         .setRequestedPreviewSize(640, 480)
@@ -177,18 +178,7 @@ public class AutoscrollActivity extends AppCompatActivity implements SurfaceHold
   //==============================================================================================
 
   /**
-   * Factory for creating a face tracker to be associated with a new face.  The multiprocessor
-   * uses this factory to create face trackers as needed -- one for each individual.
-   */
-  private class GraphicFaceTrackerFactory implements MultiProcessor.Factory<Face> {
-    @Override
-    public Tracker<Face> create(Face face) {
-      return new GraphicFaceTracker(graphicOverlay);
-    }
-  }
-
-  /**
-   * Face tracker for each detected individual. This maintains a face graphic within the app's
+   * Face tracker for the detected individual. This maintains a face graphic within the app's
    * associated face overlay.
    */
   private class GraphicFaceTracker extends Tracker<Face> {
@@ -218,13 +208,12 @@ public class AutoscrollActivity extends AppCompatActivity implements SurfaceHold
     }
 
     /**
-     * Hide the graphic when the corresponding face was not detected.  This can happen for
-     * intermediate frames temporarily (e.g., if the face was momentarily blocked from
-     * view).
+     * Don't do anything when the face doesn't seem to be there only temporarily.
+     * The application needs to keep track of the face until it is sure that
+     * it's gone.
      */
     @Override
     public void onMissing(FaceDetector.Detections<Face> detectionResults) {
-      graphicOverlay.remove(faceGraphic);
     }
 
     /**

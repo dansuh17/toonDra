@@ -22,6 +22,8 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 
+import java.util.Locale;
+
 /**
  * Graphic instance for rendering face position, orientation, and landmarks within an associated
  * graphic overlay view.
@@ -99,11 +101,14 @@ class FaceGraphic extends GraphicOverlay.Graphic {
     float ycoord = translateY(face.getPosition().y + face.getHeight() / 2);
     canvas.drawCircle(xcoord, ycoord, FACE_POSITION_RADIUS, facePositionPaint);
     canvas.drawText("id: " + faceId, xcoord + ID_X_OFFSET, ycoord + ID_Y_OFFSET, idPaint);
-    canvas.drawText("happiness: " + String.format("%.2f", face.getIsSmilingProbability()),
+    canvas.drawText("happiness: "
+        + String.format(Locale.US, "%.2f", face.getIsSmilingProbability()),
         xcoord - ID_X_OFFSET, ycoord - ID_Y_OFFSET, idPaint);
-    canvas.drawText("right eye: " + String.format("%.2f", face.getIsRightEyeOpenProbability()),
+    canvas.drawText("right eye: "
+        + String.format(Locale.US, "%.2f", face.getIsRightEyeOpenProbability()),
         xcoord + ID_X_OFFSET * 2, ycoord + ID_Y_OFFSET * 2, idPaint);
-    canvas.drawText("left eye: " + String.format("%.2f", face.getIsLeftEyeOpenProbability()),
+    canvas.drawText("left eye: "
+        + String.format(Locale.US, "%.2f", face.getIsLeftEyeOpenProbability()),
         xcoord - ID_X_OFFSET * 2, ycoord - ID_Y_OFFSET * 2, idPaint);
 
     // Draws a bounding box around the face.

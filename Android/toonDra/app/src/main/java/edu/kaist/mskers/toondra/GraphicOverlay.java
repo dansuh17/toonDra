@@ -117,7 +117,7 @@ public class GraphicOverlay extends View {
     public void postInvalidate() {
       overlay.postInvalidate();
     }
-  }
+  }  // Graphic class
 
   public GraphicOverlay(Context context, AttributeSet attrs) {
     super(context, attrs);
