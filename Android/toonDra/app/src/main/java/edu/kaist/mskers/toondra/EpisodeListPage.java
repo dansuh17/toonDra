@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ImageView;
 
 /**
@@ -16,6 +17,8 @@ public class EpisodeListPage extends AppCompatActivity{
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.episodelist_fragment);
+
+    getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
     getSupportActionBar().setTitle("Sample listview from Naver Webtoon");
     ImageView imageView = (ImageView) findViewById(R.id.episodeListView);
 

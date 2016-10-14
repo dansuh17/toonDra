@@ -11,6 +11,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
@@ -23,6 +24,8 @@ public class ReadEpisodePage extends AppCompatActivity {
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.episode_read_page);
+
+    getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
     getSupportActionBar().hide();
     findViewById(R.id.eye_screen_center).setVisibility(View.INVISIBLE);
     LinearLayout readLinear = (LinearLayout) findViewById(R.id.readLinear);
