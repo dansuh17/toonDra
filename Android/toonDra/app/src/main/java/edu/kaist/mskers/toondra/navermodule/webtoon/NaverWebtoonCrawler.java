@@ -37,7 +37,9 @@ public class NaverWebtoonCrawler {
     // Try connect to url.
     try {
       url = NaverWebtoonUrl.getDayListUrl(day);
-      doc = Jsoup.connect(url).userAgent("Mozilla").get();
+      doc = Jsoup.connect(url)
+          .userAgent("Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0) Gecko/20100101 Firefox/23.0")
+          .get();
     } catch (IOException ex) {
       ex.printStackTrace();
       return null;

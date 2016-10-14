@@ -29,97 +29,49 @@
             android:layout_height="wrap_content">
 
             <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="M"
-                android:id="@+id/button"
-                android:textSize="10dp"
-                android:padding="0dp"
-
-                android:background="#BBBBBB"
-                />
+                style="@style/DayButton"
+                android:text="월"
+                android:id="@+id/button_mon"/>
 
             <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="M"
-                android:id="@+id/button2"
-                android:textSize="10dp"
-                android:padding="0dp"
-
-                android:background="#BBBBBB"/>
+                style="@style/DayButton"
+                android:text="화"
+                android:id="@+id/button_tue"/>
 
             <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="M"
-                android:id="@+id/button3"
-                android:textSize="10dp"
-                android:padding="0dp"
-                android:background="#BBBBBB"/>
+                style="@style/DayButton"
+                android:text="수"
+                android:id="@+id/button_wed"/>
 
             <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="M"
-                android:id="@+id/button4"
-                android:textSize="10dp"
-                android:padding="0dp"
-                android:background="#BBBBBB"/>
+                style="@style/DayButton"
+                android:text="목"
+                android:id="@+id/button_thu"/>
 
             <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="M"
-                android:id="@+id/button5"
-                android:textSize="10dp"
-                android:padding="0dp"
-                android:background="#BBBBBB"/>
+                style="@style/DayButton"
+                android:text="금"
+                android:id="@+id/button_fri"/>
 
             <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="M"
-                android:id="@+id/button6"
-                android:textSize="10dp"
-                android:padding="0dp"
-                android:background="#BBBBBB"/>
+                style="@style/DayButton"
+                android:text="토"
+                android:id="@+id/button_sat"/>
 
             <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="M"
-                android:id="@+id/button7"
-                android:textSize="10dp"
-                android:padding="0dp"
-                android:background="#BBBBBB"/>
+                style="@style/DayButton"
+                android:text="일"
+                android:id="@+id/button_sun"/>
 
             <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="M"
-                android:id="@+id/button8"
-                android:textSize="10dp"
-                android:padding="0dp"
-                android:background="#BBBBBB"/>
+                style="@style/DayButton"
+                android:text="신작"
+                android:id="@+id/button_new"/>
 
             <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="M"
-                android:id="@+id/button9"
-                android:textSize="10dp"
-                android:padding="0dp"
-                android:background="#BBBBBB"/>
+                style="@style/DayButton"
+                android:text="완결"
+                android:id="@+id/button_fin"/>
 
 
         </LinearLayout>
@@ -133,7 +85,7 @@
             <ScrollView
                 android:layout_width="120dp"
                 android:layout_height="match_parent"
-                android:id="@+id/rightScrollView" >
+                android:id="@+id/leftScrollView" >
 
                 <LinearLayout
                     android:orientation="vertical"
@@ -141,6 +93,7 @@
                     android:layout_height="match_parent"
                     android:id="@+id/leftLinearLayout">
 
+                    <!--
                     <LinearLayout
                         android:id="@+id/linearLayout1"
                         android:orientation="vertical"
@@ -230,6 +183,7 @@
                             android:text="Small Text"
                             android:id="@+id/title_text4" />
                     </LinearLayout>
+                    -->
 
                 </LinearLayout>
             </ScrollView>
@@ -237,7 +191,7 @@
             <ScrollView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:id="@+id/leftScrollView">
+                android:id="@+id/rightScrollView">
                 <!--android:scrollbars="none"-->
 
                 <LinearLayout
@@ -245,7 +199,16 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:id="@+id/rightLinearLayout">
+                    <TextView
+                        android:id="@+id/previewDescription"
+                        android:layout_width="match_parent"
+                        android:layout_height="500dp"
+                        android:text="첫 화 미리보기를 할 웹툰을 눌러주세요"
+                        android:textStyle="bold"
+                        android:textSize="15sp"
+                        android:gravity="center"/>
 
+                    <!--
                     <ImageView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -275,6 +238,8 @@
                         android:background="#BBBBBB"
                         android:src="@drawable/fd_3"
                         android:adjustViewBounds="true"/>
+
+                        -->
 
                 </LinearLayout>
             </ScrollView>

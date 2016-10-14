@@ -6,6 +6,7 @@ import android.support.multidex.MultiDexApplication;
 
 /**
  * Created by harrykim on 2016. 10. 9..
+ * This class is used to maintain global variables or contexts thorugh out all the activities.
  */
 
 public class App extends MultiDexApplication {

@@ -1,11 +1,11 @@
 package edu.kaist.mskers.toondra;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
-import android.support.design.widget.Snackbar;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -15,19 +15,31 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 
 import edu.kaist.mskers.toondra.navermodule.NaverToonInfo;
 import edu.kaist.mskers.toondra.navermodule.webtoon.Day;
 import edu.kaist.mskers.toondra.navermodule.webtoon.NaverWebtoonCrawler;
 
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Element;
+
 import java.io.IOException;
-import java.net.URL;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity
     implements NavigationView.OnNavigationItemSelectedListener {
+
+  private ArrayList<Map.Entry<Day, Button>> dayButtonArray = new ArrayList<>();
+  private Day currentDay;
+  private Thumbnail currentWebtoon = null;
+  private static final int MAX_DOWNLOAD_SIZE_BYTES = 1024 * 1024 * 10; // 10MiB
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -35,15 +47,6 @@ public class MainActivity extends AppCompatActivity
     setContentView(R.layout.activity_main);
     Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
     setSupportActionBar(toolbar);
-
-    FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-    fab.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View view) {
-        Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-            .setAction("Action", null).show();
-      }
-    });
 
     DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
     ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -55,60 +58,11 @@ public class MainActivity extends AppCompatActivity
     NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
     navigationView.setNavigationItemSelectedListener(this);
 
-    LinearLayout linearLayout = (LinearLayout) findViewById(R.id.linearLayout1);
-    linearLayout.setOnClickListener(mClickListener);
-
-    addThumbnailsToLeft(Day.MON);
-    /*
-    Thread mThread = new Thread(new Runnable() {
-      @Override
-      public void run() {
-        final NaverToonInfo webtoons[] = downloadWebtoons(Day.MON);
-        try {
-          URL url = new URL(webtoons[0].getthumbUrl());
-          final Bitmap bitmap = BitmapFactory.decodeStream(url.openConnection().getInputStream());
-          final Thumbnail thumb = new Thumbnail(getApplicationContext());
-
-          thumb.initView(webtoons[1].getthumbUrl(), webtoons[1].getTitleName());
-          Log.e("uploaded toon", url.toString());
-          runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-
-              LinearLayout leftLinear = (LinearLayout) findViewById(R.id.leftLinearLayout);
-              leftLinear.addView(thumb, 0);
-              ImageView imageview = (ImageView) findViewById(R.id.title_image1);
-              imageview.setImageBitmap(bitmap);
-              imageview.getLayoutParams().height = 300;
-              imageview.getLayoutParams().width = 300;
-              Log.e("ui result?", "done");
-            }
-          });
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
-
-      }
-    });
-    mThread.start();
-    */
-
+    setDayButtons();
+    addThumbnailsToLeftByDay(currentDay);
 
   }
 
-  private int flag = 1;
-  private final LinearLayout.OnClickListener mClickListener = new View.OnClickListener() {
-    public void onClick(View v) {
-      TextView textFruit = (TextView) findViewById(R.id.title_text1);
-      if ((flag++) % 2 == 1) {
-        textFruit.setText("changed");
-      } else {
-        textFruit.setText("returned");
-      }
-    }
-  };
-
-  @Override
   public void onBackPressed() {
     DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
     if (drawer.isDrawerOpen(GravityCompat.START)) {
@@ -165,43 +119,54 @@ public class MainActivity extends AppCompatActivity
     return true;
   }
 
-  private NaverToonInfo[] downloadWebtoons(Day day) {
-    NaverToonInfo toons[] = NaverWebtoonCrawler.downloadWebtoonListByDay(day);
-    Log.e("toon name", toons[0].getTitleName());
-    return toons;
-  }
+  private void addThumbnailsToLeftByDay(final Day day) {
+    final LinearLayout leftLinear = (LinearLayout) findViewById(R.id.leftLinearLayout);
+    final LinearLayout rightLinear = (LinearLayout) findViewById(R.id.rightLinearLayout);
+    leftLinear.removeAllViews();
 
-  private void addThumbnailsToLeft(final Day day) {
-
+    /* Download webtoon list by day and set first preview link */
     Thread mThread = new Thread(new Runnable() {
       @Override
       public void run() {
-        NaverToonInfo webtoons[] = NaverWebtoonCrawler.downloadWebtoonListByDay(day);
+        final NaverToonInfo webtoons[] = NaverWebtoonCrawler.downloadWebtoonListByDay(day);
         for (int i = 0; i < webtoons.length; i++) {
-          try {
-            URL url = new URL(webtoons[0].getthumbUrl());
-            final Bitmap bitmap = BitmapFactory.decodeStream(url.openConnection().getInputStream());
-            final Thumbnail thumb = new Thumbnail(getApplicationContext());
-            thumb.initView(webtoons[i].getthumbUrl(), webtoons[i].getTitleName());
-            Log.e("uploaded toon", url.toString());
-            runOnUiThread(new Runnable() {
-              @Override
-              public void run() {
-                LinearLayout leftLinear = (LinearLayout) findViewById(R.id.leftLinearLayout);
-                leftLinear.addView(thumb, 0);
+          final Thumbnail thumb = new Thumbnail(getApplicationContext());
+          thumb.initView(webtoons[i]);
 
-                ImageView imageview = (ImageView) findViewById(R.id.title_image1);
-                imageview.setImageBitmap(bitmap);
+          final String firstEpisodeUrl = thumb.getFirstEpisodeUrl();
 
-                App mApp = (App)getApplicationContext();
-                imageview.getLayoutParams().height = mApp.dpToPixel(120);
-                imageview.getLayoutParams().width = mApp.dpToPixel(120);
-                Log.e("ui result?", "done");
+          View.OnClickListener mOnClickListener = new View.OnClickListener() {
+            public void onClick(View view) {
+              if (currentWebtoon != null) {
+                currentWebtoon.thumbName.setBackgroundColor(ContextCompat
+                    .getColor(getApplicationContext(), R.color.waitButtonColor));
               }
-            });
-          } catch (IOException e) {
-            e.printStackTrace();
-          }
+              thumb.thumbName.setBackgroundColor(ContextCompat
+                  .getColor(getApplicationContext(), R.color.activeButtonColor));
+              currentWebtoon = thumb;
+              rightLinear.removeAllViews();
+              startFirstEpisodePreview(firstEpisodeUrl);
+            }
+          };
+
+          View.OnLongClickListener mOnLongClickListener = new View.OnLongClickListener() {
+            public boolean onLongClick(View view) {
+              Log.e("longClick", "ok");
+              Intent intent = new Intent(getApplicationContext(), EpisodeListPage.class);
+              startActivity(intent);
+              return false;
+            }
+          };
+
+          thumb.thumbLayout.setOnClickListener(mOnClickListener);
+          thumb.thumbLayout.setOnLongClickListener(mOnLongClickListener);
+
+          runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+              leftLinear.addView(thumb);
+            }
+          });
 
         }
       }
@@ -209,4 +174,113 @@ public class MainActivity extends AppCompatActivity
     mThread.start();
   }
 
+  private void startFirstEpisodePreview(final String firstEpisodeUrl) {
+    final LinearLayout rightLinear = (LinearLayout) findViewById(R.id.rightLinearLayout);
+    final Thread pageThread = new Thread(new Runnable() {
+      @Override
+      public void run() {
+        try {
+          Element wtPage;
+          wtPage = Jsoup.connect(firstEpisodeUrl)
+              .userAgent("Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0) Gecko/20100101 Firefox/23.0")
+              .get();
+          Element wtViewer = wtPage.getElementsByClass("wt_viewer").first();
+
+
+          for (Element imgLink : wtViewer.children()) {
+            String imgUrl = imgLink.absUrl("src");
+
+            // Check whether imgURL is a valid image file
+            if (imgUrl == null || !imgUrl.endsWith(".jpg"))
+              continue;
+
+
+            Connection.Response wtRes;
+            wtRes = Jsoup.connect(imgUrl)
+                .userAgent("Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0) Gecko/20100101 Firefox/23.0")
+                .referrer(firstEpisodeUrl)
+                .ignoreContentType(true)
+                .maxBodySize(MAX_DOWNLOAD_SIZE_BYTES)
+                .execute();
+
+            byte[] bitmapData = wtRes.bodyAsBytes();
+            BitmapFactory.Options options = new BitmapFactory.Options();;
+            options.inSampleSize = 2;
+            Bitmap bitmap = BitmapFactory.decodeByteArray(bitmapData, 0, bitmapData.length, options);
+
+            final ImageView pageImage = (ImageView) getLayoutInflater().inflate(R.layout.page_custom, null);
+
+            pageImage.setImageBitmap(bitmap);
+            runOnUiThread(new Runnable() {
+              @Override
+              public void run() {
+                rightLinear.addView(pageImage);
+              }
+            });
+          }
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+
+      }
+    });
+    pageThread.start();
+  }
+
+  private void setDayButtons() {
+    Calendar calendar = Calendar.getInstance();
+    int day = calendar.get(Calendar.DAY_OF_WEEK);
+    switch (day) {
+      case Calendar.MONDAY:
+        currentDay = Day.MON;
+      case Calendar.TUESDAY:
+        currentDay = Day.TUES;
+      case Calendar.WEDNESDAY:
+        currentDay = Day.WEDS;
+      case Calendar.THURSDAY:
+        currentDay = Day.THURS;
+      case Calendar.FRIDAY:
+        currentDay = Day.FRI;
+      case Calendar.SATURDAY:
+        currentDay = Day.SAT;
+      case Calendar.SUNDAY:
+        currentDay = Day.SUN;
+    }
+
+    Button mon = (Button) findViewById(R.id.button_mon);
+    Button tue = (Button) findViewById(R.id.button_tue);
+    Button wed = (Button) findViewById(R.id.button_wed);
+    Button thu = (Button) findViewById(R.id.button_thu);
+    Button fri = (Button) findViewById(R.id.button_fri);
+    Button sat = (Button) findViewById(R.id.button_sat);
+    Button sun = (Button) findViewById(R.id.button_sun);
+
+    dayButtonArray.add(new AbstractMap.SimpleEntry<Day, Button>(Day.MON, mon));
+    dayButtonArray.add(new AbstractMap.SimpleEntry<Day, Button>(Day.TUES, tue));
+    dayButtonArray.add(new AbstractMap.SimpleEntry<Day, Button>(Day.WEDS, wed));
+    dayButtonArray.add(new AbstractMap.SimpleEntry<Day, Button>(Day.THURS, thu));
+    dayButtonArray.add(new AbstractMap.SimpleEntry<Day, Button>(Day.FRI, fri));
+    dayButtonArray.add(new AbstractMap.SimpleEntry<Day, Button>(Day.SAT, sat));
+    dayButtonArray.add(new AbstractMap.SimpleEntry<Day, Button>(Day.SUN, sun));
+
+    for (final Map.Entry<Day, Button> entry : dayButtonArray) {
+      if (entry.getKey() == currentDay) {
+        entry.getValue().setBackgroundColor(ContextCompat.getColor(getApplicationContext(), R.color.activeButtonColor));
+      }
+      entry.getValue().setOnClickListener(new View.OnClickListener() {
+        public void onClick(View view) {
+          addThumbnailsToLeftByDay(entry.getKey());
+          entry.getValue().setBackgroundColor(ContextCompat.getColor(getApplicationContext(), R.color.activeButtonColor));
+          for (final Map.Entry<Day, Button> currentEntry : dayButtonArray) {
+            if (currentEntry.getKey() == currentDay) {
+              currentEntry.getValue().setBackgroundColor(ContextCompat.getColor(getApplicationContext(), R.color.waitButtonColor));
+            }
+          }
+          currentDay = entry.getKey();
+        }
+      });
+    }
+  }
 }
+
+
