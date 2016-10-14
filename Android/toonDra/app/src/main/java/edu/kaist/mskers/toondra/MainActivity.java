@@ -173,6 +173,7 @@ public class MainActivity extends AppCompatActivity
     FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
     fragmentTransaction.hide(currentFragmentObj);
     fragmentTransaction.show(nextFragmentObj);
+    addThumbnails();
     fragmentTransaction.commit();
   }
 
@@ -272,17 +273,20 @@ public class MainActivity extends AppCompatActivity
               .getColor(getApplicationContext(), R.color.activeButtonColor));
           setCurrentDay(entry.getKey());
           Log.e("current_day", currentDay.toString());
-          if (currentFragment == previewModeFlag) {
-            previewModeFragment.addThumbnailsToLeftByDay(currentDay);
-          } else if (currentFragment == gridviewModeFlag) {
-            gridViewModeFragment.addThumbnailsToGrid(currentDay);
-          } else {
-            Log.e("flag", "Invalid flag error");
-            finish();
-            }
-          }
+          addThumbnails();
         }
-      );
+      });
+    }
+  }
+
+  private void addThumbnails() {
+    if (currentFragment == previewModeFlag) {
+      previewModeFragment.addThumbnailsToLeftByDay(currentDay);
+    } else if (currentFragment == gridviewModeFlag) {
+      gridViewModeFragment.addThumbnailsToGrid(currentDay);
+    } else {
+      Log.e("flag", "Invalid flag error");
+      finish();
     }
   }
 
