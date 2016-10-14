@@ -3,6 +3,8 @@
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
-    <color name="waitButtonColor">#DDDDDD</color>
+    <color name="waitButtonColor">#EEEEEE</color>
     <color name="activeButtonColor">#FFFFFF</color>
+    <color name="borderColor">#777777</color>
+    <color name="emphasizeColor">#00FF00</color>
 </resources>

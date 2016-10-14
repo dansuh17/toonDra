@@ -1,5 +1,9 @@
 package edu.kaist.mskers.toondra.navermodule.webtoon;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Log;
+
 import edu.kaist.mskers.toondra.navermodule.NaverToonCategory;
 import edu.kaist.mskers.toondra.navermodule.NaverToonInfo;
 
@@ -9,6 +13,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.regex.Matcher;
 
 
@@ -61,12 +66,20 @@ public class NaverWebtoonCrawler {
       href = link.attr("href");
 
       thumbUrl = link.child(0).absUrl("src");
-      // Use Regex to pull title id from the href link
-      mat = NaverWebtoonUrl.titleIdPat.matcher(href);
-      mat.find();
-      info[i] = new NaverToonInfo(mat.group(1), link.attr("title"),
-          thumbUrl,
-          NaverToonCategory.WEBTOON);
+      Log.e("thumbUrl:", thumbUrl);
+      try {
+        URL imgUrl = new URL(thumbUrl);
+        Bitmap bitmap = BitmapFactory.decodeStream(imgUrl.openConnection().getInputStream());
+        // Use Regex to pull title id from the href link
+        mat = NaverWebtoonUrl.titleIdPat.matcher(href);
+        mat.find();
+        info[i] = new NaverToonInfo(mat.group(1), link.attr("title"),
+            bitmap,
+            NaverToonCategory.WEBTOON);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+
     }
 
     return info;

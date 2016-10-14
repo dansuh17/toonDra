@@ -4,7 +4,6 @@ import static edu.kaist.mskers.toondra.navermodule.webtoon.NaverWebtoonUrl.getWe
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -14,9 +13,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import edu.kaist.mskers.toondra.navermodule.NaverToonInfo;
-
-import java.io.IOException;
-import java.net.URL;
 
 /**
  * Created by harrykim on 2016. 10. 9..
@@ -41,20 +37,13 @@ public class Thumbnail extends FrameLayout {
 
     thumbImage = (ImageView) thumbLayout.findViewById(R.id.thumb_image);
     thumbName = (TextView) thumbLayout.findViewById(R.id.thumb_text);
-    setThumbImage(info.getthumbUrl());
+    setThumbImage(info.getthumbnail());
     setThumbName(info.getTitleName());
     setFirstEpisodeUrl(getWebtoonDetailUrl(info.getTitleId(), 1));
   }
 
-  private void setThumbImage(String thumbUrl) {
-    try {
-      URL url = new URL(thumbUrl);
-      Log.e("thumbUrl:", thumbUrl);
-      Bitmap bitmap = BitmapFactory.decodeStream(url.openConnection().getInputStream());
-      thumbImage.setImageBitmap(bitmap);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+  private void setThumbImage(Bitmap thumbBimtmap) {
+    thumbImage.setImageBitmap(thumbBimtmap);
   }
 
   private void setThumbName(String name) {
