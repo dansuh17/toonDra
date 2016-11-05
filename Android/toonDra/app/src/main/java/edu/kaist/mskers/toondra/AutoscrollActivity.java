@@ -17,8 +17,12 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -28,12 +32,18 @@ import java.io.IOException;
  * Class AutoscrollActivity
  * This class uses the front facing camera to detect face.
  */
-public class AutoscrollActivity extends AppCompatActivity implements SurfaceHolder.Callback {
+public class AutoscrollActivity extends AppCompatActivity
+        implements SurfaceHolder.Callback, View.OnClickListener {
   private static final String TAG = "FaceTracker";
   private static final int MY_PERMISSIONS_USE_CAMERA = 1;
   private GraphicOverlay graphicOverlay;
   private CameraSource cameraSource;
   private SurfaceView cameraview;
+  private CountDownTimer countDownTimer;
+  private int scrollVelocity = 0;
+  private Button buttonUp;
+  private Button buttonDown;
+  private ScrollView scrollView;
 
   /**
    * Prepares resources such as camera view, text view, and graphic overlay.
@@ -46,6 +56,12 @@ public class AutoscrollActivity extends AppCompatActivity implements SurfaceHold
     cameraview = (SurfaceView) findViewById(R.id.surfaceView);
     TextView textarea = (TextView) findViewById(R.id.textView);
     graphicOverlay = (GraphicOverlay) findViewById(R.id.faceOverlay);
+    scrollView = (ScrollView) findViewById(R.id.scrollView);
+    buttonUp = (Button) findViewById(R.id.buttonUp);
+    buttonDown = (Button) findViewById(R.id.buttonDown);
+    buttonUp.setOnClickListener(this);
+    buttonDown.setOnClickListener(this);
+    scrollView.setOnTouchListener(touchEvent);
 
     SurfaceHolder surfaceHolder = cameraview.getHolder();
     surfaceHolder.addCallback(this);
@@ -56,6 +72,89 @@ public class AutoscrollActivity extends AppCompatActivity implements SurfaceHold
             "\n" + "Ad mea libris blandit adversarium, ignota inermis instructior ei mei, est no causae alienum verterem. An ius dico nobis feugait, scaevola recteque consequat eu cum. Pro ei sale appetere facilisis. Detracto indoctum te quo, discere dolorum impedit no sed. Sea aperiri honestatis ad, eos tale prompta dolorum no.";
     textarea.setText(temp + temp);
   }
+
+  private View.OnTouchListener touchEvent = new View.OnTouchListener() {
+    @Override
+    public boolean onTouch(View view, MotionEvent motionEvent) {
+      switch (motionEvent.getAction()) {
+        case MotionEvent.ACTION_DOWN: {
+          countDownTimer.cancel();
+          scrollVelocity = 0;
+          return true;
+        }
+        default:
+          return false;
+      }
+    }
+  };
+
+  public void onClick(View v) {
+    View view = (View) scrollView.getChildAt(scrollView.getChildCount() - 1);
+    Log.i(TAG, String.valueOf(scrollVelocity));
+    if (view.getBottom() == (scrollView.getHeight() + scrollView.getScrollY())) {
+      scrollVelocity = 0;
+    }
+    if (view.getTop() == scrollView.getScrollY()) {
+      scrollVelocity = 0;
+    }
+    if (countDownTimer != null) {
+      countDownTimer.cancel();
+    }
+
+    switch (v.getId()) {
+      case R.id.buttonUp:
+        scrollVelocity += 3;
+        break;
+      case R.id.buttonDown:
+        scrollVelocity -= 3;
+        break;
+      default:
+        break;
+    }
+
+    if (scrollVelocity == 0) {
+      return;
+    }
+    countDownTimer = new CountDownTimer(10000 / Math.abs(scrollVelocity), 20) {
+      View view = (View) scrollView.getChildAt(scrollView.getChildCount() - 1);
+      int beginScrollY = scrollView.getScrollY();
+
+      public void onTick(long millisUntilFinished) {
+        if (scrollVelocity < 0) {
+          scrollView.scrollTo(0, (int) (beginScrollY
+                  + (1000 - 1000 * millisUntilFinished / (10000 / Math.abs(scrollVelocity)))));
+          if (view.getBottom() == (scrollView.getHeight() + scrollView.getScrollY())) {
+            Log.d(TAG, "Bottom reached before end");
+            this.cancel();
+          }
+        } else if (scrollVelocity > 0) {
+          scrollView.scrollTo(0, (int) (beginScrollY
+                  - (1000 - 1000 * millisUntilFinished / (10000 / Math.abs(scrollVelocity)))));
+          if (view.getTop() == scrollView.getScrollY()) {
+            Log.d(TAG, "Top reached before end");
+            this.cancel();
+          }
+        }
+      }
+
+      public void onFinish() {
+        if (scrollVelocity < 0) {
+          if (view.getBottom() != (scrollView.getHeight() + scrollView.getScrollY())) {
+            Log.d(TAG, "Bottom not reached");
+            beginScrollY = scrollView.getScrollY();
+            this.start();
+          }
+        } else if (scrollVelocity > 0) {
+          if (view.getTop() != scrollView.getScrollY()) {
+            Log.d(TAG, "Top not reached");
+            beginScrollY = scrollView.getScrollY();
+            this.start();
+          }
+        }
+      }
+    }.start();
+  }
+
 
   /**
    * Overrides a method of SurfaceHolder interface.

@@ -9,7 +9,9 @@
         android:layout_height="match_parent"
         android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true">
+        android:layout_alignParentStart="true"
+        android:id="@+id/scrollView"
+        android:layout_above="@+id/buttonUp">
         <TextView
             android:text="TextView"
             android:layout_width="match_parent"
@@ -31,4 +33,23 @@
         android:layout_alignBottom="@+id/surfaceView"
         android:layout_alignLeft="@+id/surfaceView"
         android:layout_alignStart="@+id/surfaceView" />
+
+    <Button
+        android:text="\u2193"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignRight="@+id/surfaceView"
+        android:id="@+id/buttonDown" />
+
+    <Button
+        android:text="\u2191"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/buttonUp"
+        android:layout_alignParentBottom="true"
+        android:layout_toLeftOf="@+id/buttonDown"
+        android:layout_toStartOf="@+id/buttonDown" />
+
+
 </RelativeLayout>
