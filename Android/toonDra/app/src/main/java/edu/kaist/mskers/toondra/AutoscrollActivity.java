@@ -25,6 +25,7 @@ import android.widget.Button;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import java.io.IOException;
 
@@ -44,7 +45,8 @@ public class AutoscrollActivity extends AppCompatActivity
   private Button buttonUp;
   private Button buttonDown;
   private ScrollView scrollView;
-
+  private TextView speedText;
+  private ToggleButton toggleButton;
   /**
    * Prepares resources such as camera view, text view, and graphic overlay.
    * @param savedInstanceState current context
@@ -62,6 +64,9 @@ public class AutoscrollActivity extends AppCompatActivity
     buttonUp.setOnClickListener(this);
     buttonDown.setOnClickListener(this);
     scrollView.setOnTouchListener(touchEvent);
+    speedText = (TextView) findViewById(R.id.speedtextView);
+    setText();
+    toggleButton = (ToggleButton) findViewById(R.id.toggleButton);
 
     SurfaceHolder surfaceHolder = cameraview.getHolder();
     surfaceHolder.addCallback(this);
@@ -78,8 +83,11 @@ public class AutoscrollActivity extends AppCompatActivity
     public boolean onTouch(View view, MotionEvent motionEvent) {
       switch (motionEvent.getAction()) {
         case MotionEvent.ACTION_DOWN: {
-          countDownTimer.cancel();
-          scrollVelocity = 0;
+          if (countDownTimer != null) {
+            countDownTimer.cancel();
+            scrollVelocity = 0;
+            setText();
+          }
           return true;
         }
         default:
@@ -87,6 +95,10 @@ public class AutoscrollActivity extends AppCompatActivity
       }
     }
   };
+
+  public void setText() {
+    speedText.setText("Scroll speed: " + scrollVelocity);
+  }
 
   public void onClick(View v) {
     View view = (View) scrollView.getChildAt(scrollView.getChildCount() - 1);
@@ -111,7 +123,7 @@ public class AutoscrollActivity extends AppCompatActivity
       default:
         break;
     }
-
+    setText();
     if (scrollVelocity == 0) {
       return;
     }
@@ -125,6 +137,8 @@ public class AutoscrollActivity extends AppCompatActivity
                   + (1000 - 1000 * millisUntilFinished / (10000 / Math.abs(scrollVelocity)))));
           if (view.getBottom() == (scrollView.getHeight() + scrollView.getScrollY())) {
             Log.d(TAG, "Bottom reached before end");
+            scrollVelocity = 0;
+            setText();
             this.cancel();
           }
         } else if (scrollVelocity > 0) {
@@ -132,6 +146,8 @@ public class AutoscrollActivity extends AppCompatActivity
                   - (1000 - 1000 * millisUntilFinished / (10000 / Math.abs(scrollVelocity)))));
           if (view.getTop() == scrollView.getScrollY()) {
             Log.d(TAG, "Top reached before end");
+            scrollVelocity = 0;
+            setText();
             this.cancel();
           }
         }
@@ -150,6 +166,8 @@ public class AutoscrollActivity extends AppCompatActivity
             beginScrollY = scrollView.getScrollY();
             this.start();
           }
+        } else {
+          setText();
         }
       }
     }.start();
@@ -304,6 +322,14 @@ public class AutoscrollActivity extends AppCompatActivity
     public void onUpdate(FaceDetector.Detections<Face> detectionResults, Face face) {
       graphicOverlay.add(faceGraphic);
       faceGraphic.updateFace(face);
+      switch (toggleButton.isChecked() ? 1 : 0) {
+        case 0: //Euler
+          break;
+        case 1: //Wink & Blink
+          break;
+        default:
+          break;
+      }
     }
 
     /**

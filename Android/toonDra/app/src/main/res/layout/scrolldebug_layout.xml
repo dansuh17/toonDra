@@ -51,5 +51,25 @@
         android:layout_toLeftOf="@+id/buttonDown"
         android:layout_toStartOf="@+id/buttonDown" />
 
+    <ToggleButton
+        android:text="ToggleButton"
+        android:layout_width="160px"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/scrollView"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:textOn="Wink/Blink"
+        android:textOff="Euler"
+        android:id="@+id/toggleButton" />
+
+    <TextView
+        android:text="TextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_toRightOf="@+id/toggleButton"
+        android:layout_toEndOf="@+id/toggleButton"
+        android:id="@+id/speedtextView" />
+
 
 </RelativeLayout>
