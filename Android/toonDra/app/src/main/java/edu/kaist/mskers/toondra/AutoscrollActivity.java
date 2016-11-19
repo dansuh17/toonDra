@@ -12,6 +12,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
@@ -28,6 +30,7 @@ import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 
 /**
  * Class AutoscrollActivity
@@ -37,6 +40,12 @@ public class AutoscrollActivity extends AppCompatActivity
         implements SurfaceHolder.Callback, View.OnClickListener {
   private static final String TAG = "FaceTracker";
   private static final int MY_PERMISSIONS_USE_CAMERA = 1;
+  private static final long MILLIS_IN_FUTURE = 10000;
+  private static final long COUNTDOWN_INTERVAL = 20;
+  private static final int SCROLL_AMOUNT = 1000;
+  private static final int BLINK_SCROLL_UP = 0;
+  private static final int BLINK_SCROLL_DOWN = 1;
+
   private GraphicOverlay graphicOverlay;
   private CameraSource cameraSource;
   private SurfaceView cameraview;
@@ -46,7 +55,10 @@ public class AutoscrollActivity extends AppCompatActivity
   private Button buttonDown;
   private ScrollView scrollView;
   private TextView speedText;
+  private TextView textarea;
   private ToggleButton toggleButton;
+  private ScrollHandler scrollHandler = null;
+
   /**
    * Prepares resources such as camera view, text view, and graphic overlay.
    * @param savedInstanceState current context
@@ -56,7 +68,7 @@ public class AutoscrollActivity extends AppCompatActivity
     super.onCreate(savedInstanceState);
     setContentView(R.layout.scrolldebug_layout);
     cameraview = (SurfaceView) findViewById(R.id.surfaceView);
-    TextView textarea = (TextView) findViewById(R.id.textView);
+    textarea = (TextView) findViewById(R.id.textView);
     graphicOverlay = (GraphicOverlay) findViewById(R.id.faceOverlay);
     scrollView = (ScrollView) findViewById(R.id.scrollView);
     buttonUp = (Button) findViewById(R.id.buttonUp);
@@ -65,8 +77,16 @@ public class AutoscrollActivity extends AppCompatActivity
     buttonDown.setOnClickListener(this);
     scrollView.setOnTouchListener(touchEvent);
     speedText = (TextView) findViewById(R.id.speedtextView);
-    setText();
     toggleButton = (ToggleButton) findViewById(R.id.toggleButton);
+    setText();  // debugging purpose (shows scroll speed)
+
+
+    // create a handler for scrolling
+    if (scrollHandler == null) {
+      scrollHandler = new ScrollHandler(this);
+    } else {
+      scrollHandler.setTarget(this);
+    }
 
     SurfaceHolder surfaceHolder = cameraview.getHolder();
     surfaceHolder.addCallback(this);
@@ -78,75 +98,66 @@ public class AutoscrollActivity extends AppCompatActivity
     textarea.setText(temp + temp);
   }
 
-  private View.OnTouchListener touchEvent = new View.OnTouchListener() {
-    @Override
-    public boolean onTouch(View view, MotionEvent motionEvent) {
-      switch (motionEvent.getAction()) {
-        case MotionEvent.ACTION_DOWN: {
-          if (countDownTimer != null) {
-            countDownTimer.cancel();
-            scrollVelocity = 0;
-            setText();
-          }
-          return true;
-        }
-        default:
-          return false;
-      }
-    }
-  };
 
-  public void setText() {
+  /**
+   * Shows the speed of scrolling (for debugging purposes).
+   */
+  private void setText() {
     speedText.setText("Scroll speed: " + scrollVelocity);
   }
 
-  public void onClick(View v) {
-    View view = (View) scrollView.getChildAt(scrollView.getChildCount() - 1);
-    Log.i(TAG, String.valueOf(scrollVelocity));
-    if (view.getBottom() == (scrollView.getHeight() + scrollView.getScrollY())) {
-      scrollVelocity = 0;
-    }
-    if (view.getTop() == scrollView.getScrollY()) {
-      scrollVelocity = 0;
-    }
+  /**
+   * Set the scroll velocity to a specific value.
+   * @param vel velocity value
+   */
+  private void setScrollVelocity(int vel) {
+    scrollVelocity = vel;
+  }
+
+  /**
+   * Add amount to scroll velocity.
+   * @param amount amount to add to.
+   */
+  public void addVelocity(int amount) {
+    scrollVelocity += amount;
+  }
+
+  /**
+   * Sets a new timer that allows scrolling according to the scroll velocity.
+   */
+  private void setNewTimer() {
+    // remove any other timer set previously
     if (countDownTimer != null) {
       countDownTimer.cancel();
     }
 
-    switch (v.getId()) {
-      case R.id.buttonUp:
-        scrollVelocity += 3;
-        break;
-      case R.id.buttonDown:
-        scrollVelocity -= 3;
-        break;
-      default:
-        break;
-    }
-    setText();
-    if (scrollVelocity == 0) {
-      return;
-    }
-    countDownTimer = new CountDownTimer(10000 / Math.abs(scrollVelocity), 20) {
+    countDownTimer = new CountDownTimer(MILLIS_IN_FUTURE / Math.abs(scrollVelocity),
+        COUNTDOWN_INTERVAL) {
       View view = (View) scrollView.getChildAt(scrollView.getChildCount() - 1);
       int beginScrollY = scrollView.getScrollY();
 
+      /**
+       * On every time tick, move the scroller. Check if the scroller reached the boundary.
+       * @param millisUntilFinished The amount of time until finished.
+       */
       public void onTick(long millisUntilFinished) {
         if (scrollVelocity < 0) {
           scrollView.scrollTo(0, (int) (beginScrollY
-                  + (1000 - 1000 * millisUntilFinished / (10000 / Math.abs(scrollVelocity)))));
+              + (SCROLL_AMOUNT - SCROLL_AMOUNT
+              * millisUntilFinished / (MILLIS_IN_FUTURE / Math.abs(scrollVelocity)))));
           if (view.getBottom() == (scrollView.getHeight() + scrollView.getScrollY())) {
             Log.d(TAG, "Bottom reached before end");
-            scrollVelocity = 0;
+            setScrollVelocity(0);
             setText();
             this.cancel();
           }
         } else if (scrollVelocity > 0) {
           scrollView.scrollTo(0, (int) (beginScrollY
-                  - (1000 - 1000 * millisUntilFinished / (10000 / Math.abs(scrollVelocity)))));
+              - (SCROLL_AMOUNT - SCROLL_AMOUNT
+              * millisUntilFinished / (MILLIS_IN_FUTURE / Math.abs(scrollVelocity)))));
           if (view.getTop() == scrollView.getScrollY()) {
             Log.d(TAG, "Top reached before end");
-            scrollVelocity = 0;
+            setScrollVelocity(0);
             setText();
             this.cancel();
           }
@@ -171,6 +182,41 @@ public class AutoscrollActivity extends AppCompatActivity
         }
       }
     }.start();
+  }
+
+  /**
+   * OnClick listener for the view.
+   * @param clickedView the view that has been clicked
+   */
+  public void onClick(View clickedView) {
+    View view = scrollView.getChildAt(scrollView.getChildCount() - 1);
+    Log.i(TAG, String.valueOf(scrollVelocity));
+    if (view.getBottom() == (scrollView.getHeight() + scrollView.getScrollY())) {
+      setScrollVelocity(0);
+    }
+    if (view.getTop() == scrollView.getScrollY()) {
+      setScrollVelocity(0);
+    }
+    if (countDownTimer != null) {
+      countDownTimer.cancel();
+    }
+
+    switch (clickedView.getId()) {
+      case R.id.buttonUp:
+        scrollVelocity += 3;
+        break;
+      case R.id.buttonDown:
+        scrollVelocity -= 3;
+        break;
+      default:
+        break;
+    }
+    setText();
+    if (scrollVelocity == 0) {
+      return;
+    }
+
+    setNewTimer();
   }
 
 
@@ -322,10 +368,46 @@ public class AutoscrollActivity extends AppCompatActivity
     public void onUpdate(FaceDetector.Detections<Face> detectionResults, Face face) {
       graphicOverlay.add(faceGraphic);
       faceGraphic.updateFace(face);
+
       switch (toggleButton.isChecked() ? 1 : 0) {
         case 0: //Euler
           break;
         case 1: //Wink & Blink
+          final float blinkThresh = 0.6f;  // the threshold of 'blinking'
+
+          // get the screen's view - for getting screen's dimensions
+          View view = scrollView.getChildAt(scrollView.getChildCount() - 1);
+          Log.i(TAG, String.valueOf(scrollVelocity));
+
+          if (view.getBottom() == (scrollView.getHeight() + scrollView.getScrollY())) {
+            scrollVelocity = 0;
+          }
+          if (view.getTop() == scrollView.getScrollY()) {
+            scrollVelocity = 0;
+          }
+          if (countDownTimer != null) {
+            countDownTimer.cancel();
+          }
+
+          // change velocity according to action
+          float leftOpen = face.getIsLeftEyeOpenProbability();
+          float rightOpen = face.getIsRightEyeOpenProbability();
+          if (leftOpen > blinkThresh && rightOpen < blinkThresh) {
+            // right blink
+            // must modify UI elements through handler because FaceTracker is on a different Thread,
+            // and therefore prohibited to modify UI elements.
+            Message msg = new Message();
+            msg.what = BLINK_SCROLL_DOWN;
+            scrollHandler.sendMessage(msg);
+          } else if (leftOpen < blinkThresh && rightOpen > blinkThresh) {
+            // left blink
+            Message msg = new Message();
+            msg.what = BLINK_SCROLL_UP;
+            scrollHandler.sendMessage(msg);
+          } else if (leftOpen < blinkThresh && rightOpen < blinkThresh) {
+            // both blink
+            setScrollVelocity(0);
+          }
           break;
         default:
           break;
@@ -350,4 +432,61 @@ public class AutoscrollActivity extends AppCompatActivity
       graphicOverlay.remove(faceGraphic);
     }
   }
+
+  /**
+   * The Handler class that controls the scrolling activity.
+   * Create a static Handler class since using a normal Handler may cause memory leak.
+   * This is because the view objects will not be garbage collected even if the Handler is removed.
+   * To access the methods within the Activity class, create a weak reference to the Activity.
+   */
+  private static class ScrollHandler extends Handler {
+    private WeakReference<AutoscrollActivity> mainActivityWeakReference;
+
+    ScrollHandler(AutoscrollActivity target) {
+      mainActivityWeakReference = new WeakReference<>(target);
+    }
+
+    public void setTarget(AutoscrollActivity target) {
+      mainActivityWeakReference.clear();
+      mainActivityWeakReference = new WeakReference<>(target);
+    }
+
+    @Override
+    public void handleMessage(Message msg) {
+      super.handleMessage(msg);
+      final AutoscrollActivity activity = mainActivityWeakReference.get();
+      Log.i(TAG, "handleMessage");
+
+      switch (msg.what) {
+        case BLINK_SCROLL_UP:
+          activity.addVelocity(3);
+          break;
+        case BLINK_SCROLL_DOWN:
+          activity.addVelocity(-3);
+          break;
+        default:
+          break;
+      }
+
+      activity.setNewTimer();
+    }
+  }
+
+  private View.OnTouchListener touchEvent = new View.OnTouchListener() {
+    @Override
+    public boolean onTouch(View view, MotionEvent motionEvent) {
+      switch (motionEvent.getAction()) {
+        case MotionEvent.ACTION_DOWN: {
+          if (countDownTimer != null) {
+            countDownTimer.cancel();
+            scrollVelocity = 0;
+            setText();
+          }
+          return true;
+        }
+        default:
+          return false;
+      }
+    }
+  };
 }
