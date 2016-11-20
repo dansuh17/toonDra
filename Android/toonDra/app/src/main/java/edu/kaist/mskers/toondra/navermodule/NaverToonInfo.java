@@ -24,23 +24,25 @@ The MIT License (MIT)
 
 package edu.kaist.mskers.toondra.navermodule;
 
+import android.graphics.Bitmap;
+
 /**
  * This class contains information related to a naver webtoon.
  */
 public class NaverToonInfo {
   private String titleId;
   private String titleName;
-  private String thumbUrl;
+  private Bitmap thumbnail;
   private NaverToonCategory cat;
 
   /**
    * Set titleId, titlename, thumbnail url and category to the class.
    */
-  public NaverToonInfo(String titleId, String titleName, String thumbUrl,
+  public NaverToonInfo(String titleId, String titleName, Bitmap thumbnail,
                        NaverToonCategory cat) {
     this.titleId = titleId;
     this.titleName = titleName;
-    this.thumbUrl = thumbUrl;
+    this.thumbnail = thumbnail;
     this.cat = cat;
   }
 
@@ -52,8 +54,8 @@ public class NaverToonInfo {
     return titleName;
   }
 
-  public String getthumbUrl() {
-    return thumbUrl;
+  public Bitmap getthumbnail() {
+    return thumbnail;
   }
 
   public NaverToonCategory getCategory() {
