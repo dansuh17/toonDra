@@ -23,7 +23,9 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.animation.LinearInterpolator;
 import android.widget.Button;
+import android.widget.OverScroller;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -59,6 +61,11 @@ public class AutoscrollActivity extends AppCompatActivity
   private ToggleButton toggleButton;
   private ScrollHandler scrollHandler = null;
 
+  private int currY;
+  private int elapseTime;
+  private OverScroller overScroller;
+  private ScrollRun scrollRun;
+
   /**
    * Prepares resources such as camera view, text view, and graphic overlay.
    * @param savedInstanceState current context
@@ -80,6 +87,10 @@ public class AutoscrollActivity extends AppCompatActivity
     toggleButton = (ToggleButton) findViewById(R.id.toggleButton);
     setText();  // debugging purpose (shows scroll speed)
 
+    overScroller = new OverScroller(AutoscrollActivity.this);
+    scrollRun = new ScrollRun();
+    textArea.post(scrollRun);
+    elapseTime = 10000;
 
     // create a handler for scrolling
     if (scrollHandler == null) {
@@ -95,7 +106,7 @@ public class AutoscrollActivity extends AppCompatActivity
             "\n" + "Ex facer vitae maiorum est. Habeo splendide moderatius duo id. Quo in viris euripidis. Qui graeci recteque accusamus in, ut qui diam sint, saperet mentitum vel ut.\n" +
             "\n" + "Duo modus nihil eripuit eu, eu malorum labitur consequat mea, veri omnesque patrioque at mea. Vis timeam patrioque id. Nam putant aperiri ad, at assum delectus mea, sonet nominavi periculis sea an. Sit admodum apeirian ex, congue tritani repudiare ei ius. Virtute omittam mea ex, hinc consul cu his, ea dicit homero principes quo. Dicant consul gubergren quo no, ea has sonet salutandi.\n" +
             "\n" + "Ad mea libris blandit adversarium, ignota inermis instructior ei mei, est no causae alienum verterem. An ius dico nobis feugait, scaevola recteque consequat eu cum. Pro ei sale appetere facilisis. Detracto indoctum te quo, discere dolorum impedit no sed. Sea aperiri honestatis ad, eos tale prompta dolorum no.";
-    textArea.setText(temp + temp);
+    textArea.setText(temp + temp + temp);
   }
 
 
@@ -464,16 +475,18 @@ public class AutoscrollActivity extends AppCompatActivity
 
       switch (msg.what) {
         case BLINK_SCROLL_UP:
-          activity.addVelocity(3);
+          // activity.addVelocity(3);
           break;
         case BLINK_SCROLL_DOWN:
-          activity.addVelocity(-3);
+          // activity.addVelocity(-3);
+          activity.scrollRun.forceFinish();
+          activity.scrollRun.start(activity.elapseTime);
           break;
         default:
           break;
       }
 
-      activity.setNewTimer();
+      // activity.setNewTimer();
     }
   }
 
@@ -494,4 +507,36 @@ public class AutoscrollActivity extends AppCompatActivity
       }
     }
   };
+
+  // runnable for scroller
+  private class ScrollRun implements Runnable {
+    private final OverScroller overScroller;
+
+    ScrollRun() {
+      overScroller = new OverScroller(AutoscrollActivity.this, new LinearInterpolator());
+    }
+
+    public void start(int totaltime) {
+      overScroller.startScroll(0, currY, 0, 5000, totaltime);
+    }
+
+    public void forceFinish() {
+      overScroller.forceFinished(true);
+    }
+
+    @Override
+    public void run() {
+      if (!overScroller.isFinished()) {
+        Log.i(TAG, "runnnnn");
+        overScroller.computeScrollOffset();
+        currY = overScroller.getCurrY();
+        textArea.scrollTo(0, currY);
+      }
+      textArea.post(this);
+    }
+
+    public boolean isFinished() {
+      return overScroller.isFinished();
+    }
+  }
 }
