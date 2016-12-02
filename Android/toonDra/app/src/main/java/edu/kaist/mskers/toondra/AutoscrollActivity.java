@@ -45,6 +45,10 @@ public class AutoscrollActivity extends AppCompatActivity
   private static final int SCROLL_AMOUNT = 1000;
   private static final int BLINK_SCROLL_UP = 0;
   private static final int BLINK_SCROLL_DOWN = 1;
+  enum BlinkType {
+    None, Right, Left, Both;
+  }
+  private BlinkType blinkEye = BlinkType.None;
 
   private GraphicOverlay graphicOverlay;
   private CameraSource cameraSource;
@@ -120,6 +124,7 @@ public class AutoscrollActivity extends AppCompatActivity
    */
   public void addVelocity(int amount) {
     scrollVelocity += amount;
+    Log.i(TAG, "ScrollVelocity :" +String.valueOf(scrollVelocity));
   }
 
   /**
@@ -378,22 +383,10 @@ public class AutoscrollActivity extends AppCompatActivity
         case 0: //Euler
           break;
         case 1: //Wink & Blink
-          final float blinkThresh = 0.6f;  // the threshold of 'blinking'
+          final float blinkThresh = 0.55f;  // the threshold of 'blinking'
 
           // get the screen's view - for getting screen's dimensions
           View view = scrollView.getChildAt(scrollView.getChildCount() - 1);
-          Log.i(TAG, String.valueOf(scrollVelocity));
-
-          if (view.getBottom() == (scrollView.getHeight() + scrollView.getScrollY())) {
-            scrollVelocity = 0;
-          }
-          if (view.getTop() == scrollView.getScrollY()) {
-            scrollVelocity = 0;
-          }
-          if (countDownTimer != null) {
-            countDownTimer.cancel();
-          }
-
           // change velocity according to action
           float leftOpen = face.getIsLeftEyeOpenProbability();
           float rightOpen = face.getIsRightEyeOpenProbability();
@@ -401,17 +394,28 @@ public class AutoscrollActivity extends AppCompatActivity
             // right blink
             // must modify UI elements through handler because FaceTracker is on a different Thread,
             // and therefore prohibited to modify UI elements.
-            Message msg = new Message();
-            msg.what = BLINK_SCROLL_DOWN;
-            scrollHandler.sendMessage(msg);
+            if (blinkEye != BlinkType.Right) {
+              blinkEye = BlinkType.Right;
+              Message msg = new Message();
+              msg.what = BLINK_SCROLL_DOWN;
+              scrollHandler.sendMessage(msg);
+            }
           } else if (leftOpen < blinkThresh && rightOpen > blinkThresh) {
             // left blink
-            Message msg = new Message();
-            msg.what = BLINK_SCROLL_UP;
-            scrollHandler.sendMessage(msg);
+            if (blinkEye != BlinkType.Left) {
+              blinkEye = BlinkType.Left;
+              Message msg = new Message();
+              msg.what = BLINK_SCROLL_UP;
+              scrollHandler.sendMessage(msg);
+            }
           } else if (leftOpen < blinkThresh && rightOpen < blinkThresh) {
             // both blink
-            setScrollVelocity(0);
+            if (blinkEye != BlinkType.Both) {
+              blinkEye = BlinkType.Both;
+              setScrollVelocity(0);
+            }
+          } else {
+            blinkEye = BlinkType.None;
           }
           break;
         default:
