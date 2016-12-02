@@ -5,12 +5,15 @@ import com.google.android.gms.vision.CameraSource;
 import com.google.android.gms.vision.Tracker;
 import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.FaceDetector;
+import com.google.android.gms.vision.face.Landmark;
 import com.google.android.gms.vision.face.LargestFaceFocusingProcessor;
 
 import android.Manifest;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.graphics.PointF;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -45,6 +48,7 @@ public class AutoscrollActivity extends AppCompatActivity
   private static final int SCROLL_AMOUNT = 1000;
   private static final int BLINK_SCROLL_UP = 0;
   private static final int BLINK_SCROLL_DOWN = 1;
+  private static final int START_CALIBRATION = 2;
 
   private GraphicOverlay graphicOverlay;
   private CameraSource cameraSource;
@@ -58,7 +62,8 @@ public class AutoscrollActivity extends AppCompatActivity
   private TextView textarea;
   private ToggleButton toggleButton;
   private ScrollHandler scrollHandler = null;
-
+  private float eulerCalibrator = 0;
+  private static int eulerCounter = -2;
   /**
    * Prepares resources such as camera view, text view, and graphic overlay.
    * @param savedInstanceState current context
@@ -371,6 +376,36 @@ public class AutoscrollActivity extends AppCompatActivity
 
       switch (toggleButton.isChecked() ? 1 : 0) {
         case 0: //Euler
+          float bottomMouth, noseBase, rightEye, mouthToNose, nosetoEye;
+          bottomMouth = noseBase = rightEye = 0;
+          for (Landmark landmark : face.getLandmarks()) {
+            int landmarkType = landmark.getType();
+            if (landmarkType == Landmark.BOTTOM_MOUTH) {
+              bottomMouth = landmark.getPosition().y;
+            } else if (landmarkType == Landmark.NOSE_BASE) {
+              noseBase = landmark.getPosition().y;
+            } else if (landmarkType == Landmark.RIGHT_EYE) {
+              rightEye = landmark.getPosition().y;
+            }
+            mouthToNose = bottomMouth - noseBase;
+            nosetoEye = noseBase - rightEye;
+            if (eulerCounter == -2) {
+              Message msg = new Message();
+              msg.what = START_CALIBRATION;
+              scrollHandler.sendMessage(msg);
+              eulerCounter++;
+            }
+            else if (0 <= eulerCounter && eulerCounter < 30 && nosetoEye > 0 && nosetoEye < 150) {
+              eulerCalibrator += nosetoEye;
+              eulerCounter++;
+            } else if (eulerCounter == 30) {
+              eulerCalibrator /= 30;
+              eulerCounter++;
+            } else if (eulerCounter > 30) {
+              Log.d(TAG, "Euler Calibrated value: " + String.valueOf(eulerCalibrator));
+              Log.d(TAG, "Euler NosetoEye: " + String.valueOf(nosetoEye));
+            }
+          }
           break;
         case 1: //Wink & Blink
           final float blinkThresh = 0.6f;  // the threshold of 'blinking'
@@ -464,11 +499,21 @@ public class AutoscrollActivity extends AppCompatActivity
         case BLINK_SCROLL_DOWN:
           activity.addVelocity(-3);
           break;
+        case START_CALIBRATION:
+          new AlertDialog.Builder(activity).setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+              eulerCounter++;
+              dialog.dismiss();
+            }
+          }).setMessage("Euler Calibration will begin").show();
+          break;
         default:
           break;
       }
-
-      activity.setNewTimer();
+      if (msg.what != START_CALIBRATION) {
+        activity.setNewTimer();
+      }
     }
   }
 

@@ -16,7 +16,7 @@
         android:name="android.support.multidex.MultiDexApplication">
         <!-- android:name=".AutoscrollActivity"-->
         <activity
-            android:name=".MainActivity"
+            android:name=".AutoscrollActivity"
             android:label="@string/app_name"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
