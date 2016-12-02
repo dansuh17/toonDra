@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto">
+  <item
+      android:id="@+id/prev_episode"
+      android:enabled="true"
+      android:icon="@drawable/before_button"
+      android:title="이전화"
+      app:showAsAction="ifRoom" />
+  <item
+      android:id="@+id/bottom_title_text"
+      android:enabled="false"
+      android:title="현재화"
+
+      app:showAsAction="never" />
+  <item
+      android:id="@+id/next_episode"
+      android:enabled="true"
+      android:icon="@drawable/next_button"
+      android:title="다음화"
+      app:showAsAction="ifRoom" />
+
+</menu>

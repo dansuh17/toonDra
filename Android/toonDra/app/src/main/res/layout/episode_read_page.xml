@@ -3,9 +3,24 @@
               xmlns:app="http://schemas.android.com/apk/res-auto" android:orientation="vertical"
               android:layout_width="match_parent"
               android:layout_height="match_parent">
-  <ScrollView
+  <android.support.design.widget.AppBarLayout
       android:layout_width="match_parent"
-      android:layout_height="match_parent">
+      android:layout_height="wrap_content"
+      android:theme="@style/AppTheme.AppBarOverlay">
+
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/read_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        app:popupTheme="@style/AppTheme.PopupOverlay" />
+
+  </android.support.design.widget.AppBarLayout>
+
+  <edu.kaist.mskers.toondra.ScrollViewExt
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:id="@+id/readScroll">
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -13,12 +28,23 @@
         android:id="@+id/readLinear"
         android:clickable="true">
     </LinearLayout>
-  </ScrollView>
+  </edu.kaist.mskers.toondra.ScrollViewExt>
   <ImageView
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
       app:srcCompat="@drawable/eye_temp"
       android:id="@+id/eye_screen_center"
       android:layout_gravity="center"/>
+  <android.support.design.widget.BottomNavigationView
+      android:id="@+id/bottom_navigation"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_gravity="bottom"
+      app:itemBackground="@color/colorPrimary"
+      app:itemIconTint="@color/activeButtonColor"
+      app:itemTextColor="@color/activeButtonColor"
+      app:menu="@menu/bottom_navigation_menu" />
+
+
 </FrameLayout>
 

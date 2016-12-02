@@ -1,6 +1,7 @@
 package edu.kaist.mskers.toondra;
 
 import static edu.kaist.mskers.toondra.navermodule.webtoon.NaverWebtoonUrl.getWebtoonDetailUrl;
+import static edu.kaist.mskers.toondra.navermodule.webtoon.NaverWebtoonUrl.getWebtoonListUrl;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -23,6 +24,7 @@ public class Thumbnail extends FrameLayout {
   public ImageView thumbImage;
   public TextView thumbName;
   public String firstEpisodeUrl;
+  public String listViewUrl;
 
   public Thumbnail(Context context) {
     super(context);
@@ -44,6 +46,7 @@ public class Thumbnail extends FrameLayout {
     setThumbImage(info.getthumbnail());
     setThumbName(info.getTitleName());
     setFirstEpisodeUrl(getWebtoonDetailUrl(info.getTitleId(), 1));
+    setListViewUrl(getWebtoonListUrl(info.getTitleId()));
   }
 
   /**
@@ -73,6 +76,15 @@ public class Thumbnail extends FrameLayout {
    */
   public String getFirstEpisodeUrl() {
     return firstEpisodeUrl;
+  }
+
+
+  public void setListViewUrl(String url) {
+    listViewUrl = url;
+  }
+
+  public String getListViewUrl() {
+    return listViewUrl;
   }
 
   @Override

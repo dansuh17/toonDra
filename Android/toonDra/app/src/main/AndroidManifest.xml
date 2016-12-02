@@ -26,7 +26,10 @@
         </activity>
 
         <activity android:name=".EpisodeListPage"></activity>
-        <activity android:name=".ReadEpisodePage"></activity>
+        <activity android:name=".ReadEpisodePage"
+                  android:theme="@style/AppTheme.NoActionBar">
+
+        </activity>
         <meta-data
             android:name="com.google.android.gms.vision.DEPENDENCIES"
             android:value="face" /><!-- ATTENTION: This was auto-generated to add Google Play services to your project for

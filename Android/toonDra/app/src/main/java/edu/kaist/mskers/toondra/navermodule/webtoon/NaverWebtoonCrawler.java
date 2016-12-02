@@ -21,8 +21,7 @@ import java.util.regex.Matcher;
  * This class provides utility methods to crawl naver webtoon.
  */
 public class NaverWebtoonCrawler {
-
-
+  public static final int MAX_DOWNLOAD_SIZE_BYTES = 1024 * 1024 * 10; // 10MiB
   /**
    * Download available webtoon information for given day.
    *

@@ -17,6 +17,7 @@ import android.widget.Toast;
 
 import edu.kaist.mskers.toondra.navermodule.NaverToonInfo;
 import edu.kaist.mskers.toondra.navermodule.webtoon.Day;
+import edu.kaist.mskers.toondra.navermodule.webtoon.NaverWebtoonCrawler;
 
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
@@ -31,7 +32,6 @@ import java.util.ArrayList;
  * Fragment class that gives teh view of the preview mode.
  */
 public class PreviewModeFragment extends Fragment {
-  private static final int MAX_DOWNLOAD_SIZE_BYTES = 1024 * 1024 * 10; // 10MiB
   private Thumbnail currentWebtoon = null;
   private long lastClickTime = 0;
   Thread pageThread = null;
@@ -75,7 +75,7 @@ public class PreviewModeFragment extends Fragment {
             View.OnClickListener onClickListener = new View.OnClickListener() {
               public void onClick(View view) {
 
-                if (SystemClock.elapsedRealtime() - lastClickTime < 1000) {
+                if (SystemClock.elapsedRealtime() - lastClickTime < 2000) {
                   return;
                 }
 
@@ -101,6 +101,7 @@ public class PreviewModeFragment extends Fragment {
               public boolean onLongClick(View view) {
                 Log.e("longClick", "ok");
                 Intent intent = new Intent(getActivity(), EpisodeListPage.class);
+                intent.putExtra("listview_url", thumb.getListViewUrl());
                 startActivity(intent);
                 return false;
               }
@@ -151,7 +152,14 @@ public class PreviewModeFragment extends Fragment {
             return;
           }
 
+
+          int previewPageLengthCnt = 0;
           for (Element imgLink : wtViewer.children()) {
+            previewPageLengthCnt++;
+            if (previewPageLengthCnt > 5) {
+              break;
+            }
+            Log.d("ThumbImgLink", imgLink.toString());
             String imgUrl = imgLink.absUrl("src");
 
             // Check whether imgURL is a valid image file
@@ -165,7 +173,7 @@ public class PreviewModeFragment extends Fragment {
                     + "Gecko/20100101 Firefox/23.0")
                 .referrer(firstEpisodeUrl)
                 .ignoreContentType(true)
-                .maxBodySize(MAX_DOWNLOAD_SIZE_BYTES)
+                .maxBodySize(NaverWebtoonCrawler.MAX_DOWNLOAD_SIZE_BYTES)
                 .execute();
 
             byte[] bitmapData = wtRes.bodyAsBytes();

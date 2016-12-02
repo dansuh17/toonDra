@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
       xmlns:app="http://schemas.android.com/apk/res-auto">
-  <!-- Change fragment -->
+  <!--
+  <item android:id="@+id/before_page"
+        android:icon="@drawable/before_page_button"
+        android:title="before_page"
+        app:showAsAction="always"/>
+        -->
   <item android:id="@+id/read_eye"
         android:icon="@drawable/eye_menu"
         android:title="eye scroll"
         app:showAsAction="always"/>
 </menu>
-
