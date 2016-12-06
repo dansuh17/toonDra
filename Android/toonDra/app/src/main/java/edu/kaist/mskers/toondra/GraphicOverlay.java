@@ -172,7 +172,7 @@ public class GraphicOverlay extends View {
   @Override
   protected void onDraw(Canvas canvas) {
     super.onDraw(canvas);
-
+    /*
     synchronized (lock) {
       if ((previewWidth != 0) && (previewHeight != 0)) {
         widthScaleFactor = (float) canvas.getWidth() / (float) previewWidth;
@@ -183,5 +183,6 @@ public class GraphicOverlay extends View {
         graphic.draw(canvas);
       }
     }
+    */
   }
 }

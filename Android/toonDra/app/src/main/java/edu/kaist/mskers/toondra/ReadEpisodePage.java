@@ -39,6 +39,7 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
   private int latest_id = 0;
   private int episode_id = 0;
   private LinearLayout readLinear = null;
+  private boolean isAutoScroll = false;
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -140,15 +141,21 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
     int id = item.getItemId();
 
     if (id == R.id.read_eye) {
-      findViewById(R.id.eye_screen_center).setVisibility(View.VISIBLE);
-      Handler handler = new Handler();
-      handler.postDelayed(new Runnable() {
-        @Override
-        public void run() {
-          findViewById(R.id.eye_screen_center).setVisibility(View.INVISIBLE);
-        }
-      }, 1000);
-      return true;
+      if (isAutoScroll == false) {
+        isAutoScroll = true;
+        findViewById(R.id.eye_screen_center).setVisibility(View.VISIBLE);
+        Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+          @Override
+          public void run() {
+            findViewById(R.id.eye_screen_center).setVisibility(View.INVISIBLE);
+          }
+        }, 1000);
+      }
+      else {
+        isAutoScroll = false;
+      }
+        return true;
     } else if (id == android.R.id.home) {
       finish();
     }
