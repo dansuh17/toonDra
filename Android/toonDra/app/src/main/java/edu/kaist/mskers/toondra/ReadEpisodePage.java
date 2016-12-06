@@ -1,12 +1,19 @@
 package edu.kaist.mskers.toondra;
 
+import android.Manifest;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.design.internal.BottomNavigationItemView;
 import android.support.design.widget.BottomNavigationView;
+import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.Spannable;
@@ -15,11 +22,18 @@ import android.text.style.RelativeSizeSpan;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
+
+import com.google.android.gms.vision.CameraSource;
+import com.google.android.gms.vision.Tracker;
+import com.google.android.gms.vision.face.Face;
+import com.google.android.gms.vision.face.FaceDetector;
+import com.google.android.gms.vision.face.LargestFaceFocusingProcessor;
 
 import edu.kaist.mskers.toondra.navermodule.webtoon.NaverWebtoonCrawler;
 
@@ -28,18 +42,38 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 
 /**
  * Created by harrykim on 2016. 10. 14..
  */
 
-public class ReadEpisodePage extends AppCompatActivity implements ScrollViewListener{
+public class ReadEpisodePage extends AppCompatActivity implements ScrollViewListener {
   private BottomNavigationView bottomNavigationView = null;
   private String read_url = null;
   private int latest_id = 0;
   private int episode_id = 0;
   private LinearLayout readLinear = null;
   private boolean isAutoScroll = false;
+  private static final String TAG = "FaceTracker";
+  private static final int MY_PERMISSIONS_USE_CAMERA = 1;
+  private static final long MILLIS_IN_FUTURE = 10000;
+  private static final long COUNTDOWN_INTERVAL = 20;
+  private static final int SCROLL_AMOUNT = 1000;
+  private static final int BLINK_SCROLL_UP = 0;
+  private static final int BLINK_SCROLL_DOWN = 1;
+  enum BlinkType {
+    None, Right, Left, Both;
+  }
+  private int blinkCount = 0;
+  private ReadEpisodePage.BlinkType blinkEye = ReadEpisodePage.BlinkType.None;
+  private CameraSource cameraSource;
+  private CountDownTimer countDownTimer;
+  private int scrollVelocity = 0;
+  private ReadEpisodePage.ScrollHandler scrollHandler = null;
+  private Toast scrollToast = null;
+  private ScrollViewExt readScroll;
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -62,9 +96,27 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
     episode_id = getIntent().getIntExtra("episode_id", 0);
     Log.d("readUrl", getIntent().getStringExtra("read_url"));
     readEpisode(read_url + episode_id);
-    ScrollViewExt readScroll = (ScrollViewExt) findViewById(R.id.readScroll);
+    readScroll = (ScrollViewExt) findViewById(R.id.readScroll);
     readScroll.setScrollViewListener(this);
-
+    setFaceDetectScroll();
+    View.OnTouchListener onTouchListener = new View.OnTouchListener() {
+      @Override
+      public boolean onTouch(View view, MotionEvent motionEvent) {
+        switch (motionEvent.getAction()) {
+          case MotionEvent.ACTION_DOWN: {
+            if (countDownTimer != null) {
+              Log.i("TouchEvent","CountDown canceled");
+              countDownTimer.cancel();
+              scrollVelocity = 0;
+            }
+            return false;
+          }
+          default:
+            return false;
+        }
+      }
+    };
+    readLinear.setOnTouchListener(onTouchListener);
     View.OnClickListener onClickListener = new View.OnClickListener() {
       @Override
       public void onClick(View view) {
@@ -263,6 +315,292 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
     }
     if (getSupportActionBar().isShowing()) {
       getSupportActionBar().hide();
+    }
+  }
+
+
+  private void setFaceDetectScroll() {
+    // create a handler for scrolling
+    if (scrollHandler == null) {
+      scrollHandler = new ReadEpisodePage.ScrollHandler(this);
+    } else {
+      scrollHandler.setTarget(this);
+    }
+
+    Context context = getApplicationContext();
+
+    FaceDetector detector = new FaceDetector.Builder(context)
+            .setClassificationType(FaceDetector.ALL_CLASSIFICATIONS)
+            .build();
+    detector.setProcessor(new LargestFaceFocusingProcessor.Builder(detector,
+            new ReadEpisodePage.GraphicFaceTracker()).build());
+    // create a camera source
+    cameraSource = new CameraSource.Builder(context, detector)
+            .setRequestedPreviewSize(640, 480)
+            .setFacing(CameraSource.CAMERA_FACING_FRONT)
+            .setRequestedFps(30.0f)
+            .build();
+
+    // check for permission status and request for permission
+    if (cameraSource != null) {
+      if (ActivityCompat.checkSelfPermission(this,
+              android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                Manifest.permission.CAMERA)) {
+          // show request alert if camera access needs to show a message
+          new AlertDialog.Builder(this)
+                  .setTitle("Request Permission for Camera")
+                  .setMessage("App Requires Camera Access")
+                  .setNegativeButton(R.string.deny, null)
+                  .setPositiveButton(R.string.accept, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                      ActivityCompat.requestPermissions(ReadEpisodePage.this,
+                              new String[] {Manifest.permission.CAMERA},
+                              MY_PERMISSIONS_USE_CAMERA);
+                    }
+                  })
+                  .create()
+                  .show();
+        } else {
+          ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.CAMERA},
+                  MY_PERMISSIONS_USE_CAMERA);
+        }
+        return;
+      }
+
+      // If explicit permission request is unnecessary, proceed with using camera.
+      try {
+        cameraSource.start();
+
+      } catch (IOException ioe) {
+        Log.e(TAG, "Unable to start camera source.", ioe);
+        cameraSource.release();
+      }
+    }
+  }
+
+  /**
+   * Set the scroll velocity to a specific value.
+   * @param vel velocity value
+   */
+  private void setScrollVelocity(int vel) {
+    scrollVelocity = vel;
+  }
+
+  /**
+   * Add amount to scroll velocity.
+   * @param amount amount to add to.
+   */
+  public void addVelocity(int amount) {
+    scrollVelocity += amount;
+    Log.i(TAG, "ScrollVelocity :" +String.valueOf(scrollVelocity));
+  }
+
+  /**
+   * Sets a new timer that allows scrolling according to the scroll velocity.
+   */
+  private void setNewTimer() {
+    // remove any other timer set previously
+    if (countDownTimer != null) {
+      countDownTimer.cancel();
+    }
+
+    // prevent divide by zero
+    if (scrollVelocity == 0) {
+      return;
+    }
+    if (scrollToast != null) {
+      scrollToast.cancel();
+    }
+    scrollToast = Toast.makeText(this, "Scroll speed: " + String.valueOf(scrollVelocity), Toast.LENGTH_SHORT);
+    scrollToast.show();
+    countDownTimer = new CountDownTimer(MILLIS_IN_FUTURE / Math.abs(scrollVelocity),
+            COUNTDOWN_INTERVAL) {
+      View view = (View) readScroll.getChildAt(readScroll.getChildCount() - 1);
+      int beginScrollY = readScroll.getScrollY();
+
+      /**
+       * On every time tick, move the scroller. Check if the scroller reached the boundary.
+       * @param millisUntilFinished The amount of time until finished.
+       */
+      public void onTick(long millisUntilFinished) {
+        if (scrollVelocity < 0) {
+          readScroll.scrollTo(0, (int) (beginScrollY
+                  + (SCROLL_AMOUNT - SCROLL_AMOUNT
+                  * millisUntilFinished / (MILLIS_IN_FUTURE / Math.abs(scrollVelocity)))));
+          if (view.getBottom() == (readScroll.getHeight() + readScroll.getScrollY())) {
+            Log.d(TAG, "Bottom reached before end");
+            setScrollVelocity(0);
+            this.cancel();
+          }
+        } else if (scrollVelocity > 0) {
+          readScroll.scrollTo(0, (int) (beginScrollY
+                  - (SCROLL_AMOUNT - SCROLL_AMOUNT
+                  * millisUntilFinished / (MILLIS_IN_FUTURE / Math.abs(scrollVelocity)))));
+          if (view.getTop() == readScroll.getScrollY()) {
+            Log.d(TAG, "Top reached before end");
+            setScrollVelocity(0);
+            this.cancel();
+          }
+        }
+      }
+
+      public void onFinish() {
+        if (scrollVelocity < 0) {
+          if (view.getBottom() != (readScroll.getHeight() + readScroll.getScrollY())) {
+            Log.d(TAG, "Bottom not reached");
+            beginScrollY = readScroll.getScrollY();
+            this.start();
+          }
+        } else if (scrollVelocity > 0) {
+          if (view.getTop() != readScroll.getScrollY()) {
+            Log.d(TAG, "Top not reached");
+            beginScrollY = readScroll.getScrollY();
+            this.start();
+          }
+        } else {
+        }
+      }
+    }.start();
+  }
+
+  public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                         @NonNull int[] grantResults) {
+    switch (requestCode) {
+      case MY_PERMISSIONS_USE_CAMERA: {
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) {
+          try {
+            cameraSource.start();
+            Log.i(TAG, "Camera??");
+
+          } catch (IOException ioe) {
+            Log.e(TAG, "Unable to start camera source.", ioe);
+            cameraSource.release();
+          }
+        } else {
+          Toast.makeText(this, "CAMERA Permission Denied", Toast.LENGTH_SHORT).show();
+        }
+        break;
+      }
+      default:
+        Log.e(TAG, "Granted Access to Non-requested Resource");
+        break;
+    }
+  }
+
+
+  //==============================================================================================
+  // Graphic Face Tracker
+  //==============================================================================================
+
+  /**
+   * Face tracker for the detected individual. This maintains a face graphic within the app's
+   * associated face overlay.
+   */
+  private class GraphicFaceTracker extends Tracker<Face> {
+
+    /**
+     * Update the position/characteristics of the face within the overlay.
+     */
+    @Override
+    public void onUpdate(FaceDetector.Detections<Face> detectionResults, Face face) {
+      switch (isAutoScroll ? 1 : 0) {
+        case 0: //Euler
+          break;
+        case 1: //Wink & Blink
+          final float blinkThresh = 0.20f;  // the threshold of 'blinking'
+          // get the screen's view - for getting screen's dimensions
+          View view = readScroll.getChildAt(readScroll.getChildCount() - 1);
+          // change velocity according to action
+          float leftOpen = face.getIsLeftEyeOpenProbability();
+          float rightOpen = face.getIsRightEyeOpenProbability();
+          if (leftOpen > blinkThresh && rightOpen < blinkThresh) {
+            // right blink
+            // must modify UI elements through handler because FaceTracker is on a different Thread,
+            // and therefore prohibited to modify UI elements.
+            if (blinkEye != ReadEpisodePage.BlinkType.Right) {
+              blinkEye = ReadEpisodePage.BlinkType.Right;
+              blinkCount = 1;
+            } else {
+              blinkCount ++;
+              if (blinkCount == 3) {
+                Message msg = new Message();
+                msg.what = BLINK_SCROLL_DOWN;
+                scrollHandler.sendMessage(msg);
+              }
+            }
+          } else if (leftOpen < blinkThresh && rightOpen > blinkThresh) {
+            // left blink
+            if (blinkEye != ReadEpisodePage.BlinkType.Left) {
+              blinkEye = ReadEpisodePage.BlinkType.Left;
+              blinkCount = 1;
+            } else {
+              blinkCount ++;
+              if (blinkCount == 3) {
+                Message msg = new Message();
+                msg.what = BLINK_SCROLL_UP;
+                scrollHandler.sendMessage(msg);
+              }
+            }
+          } else if (leftOpen < blinkThresh && rightOpen < blinkThresh) {
+            // both blink
+            if (blinkEye != ReadEpisodePage.BlinkType.Both) {
+              blinkEye = ReadEpisodePage.BlinkType.Both;
+              blinkCount = 1;
+            } else {
+              blinkCount ++;
+              if (blinkCount == 3) {
+                setScrollVelocity(0);
+              }
+            }
+          } else {
+            blinkEye = ReadEpisodePage.BlinkType.None;
+          }
+          break;
+        default:
+          break;
+      }
+    }
+  }
+
+  /**
+   * The Handler class that controls the scrolling activity.
+   * Create a static Handler class since using a normal Handler may cause memory leak.
+   * This is because the view objects will not be garbage collected even if the Handler is removed.
+   * To access the methods within the Activity class, create a weak reference to the Activity.
+   */
+  private static class ScrollHandler extends Handler {
+    private WeakReference<ReadEpisodePage> mainActivityWeakReference;
+
+    ScrollHandler(ReadEpisodePage target) {
+      mainActivityWeakReference = new WeakReference<>(target);
+    }
+
+    public void setTarget(ReadEpisodePage target) {
+      mainActivityWeakReference.clear();
+      mainActivityWeakReference = new WeakReference<>(target);
+    }
+
+    @Override
+    public void handleMessage(Message msg) {
+      super.handleMessage(msg);
+      final ReadEpisodePage activity = mainActivityWeakReference.get();
+      Log.i(TAG, "handleMessage");
+
+      switch (msg.what) {
+        case BLINK_SCROLL_UP:
+          activity.addVelocity(6);
+          break;
+        case BLINK_SCROLL_DOWN:
+          activity.addVelocity(-6);
+          break;
+        default:
+          break;
+      }
+
+      activity.setNewTimer();
     }
   }
 }

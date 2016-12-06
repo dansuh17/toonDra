@@ -33,8 +33,7 @@ import java.lang.ref.WeakReference;
  * Class AutoscrollActivity
  * This class uses the front facing camera to detect face.
  */
-public class AutoscrollActivity extends AppCompatActivity
-        implements View.OnClickListener {
+public class AutoscrollActivity extends AppCompatActivity {
   private static final String TAG = "FaceTracker";
   private static final int MY_PERMISSIONS_USE_CAMERA = 1;
   private static final long MILLIS_IN_FUTURE = 10000;
@@ -46,20 +45,15 @@ public class AutoscrollActivity extends AppCompatActivity
     None, Right, Left, Both;
   }
   private BlinkType blinkEye = BlinkType.None;
-
-  //private GraphicOverlay graphicOverlay;
   private CameraSource cameraSource;
-  //private SurfaceView cameraview;
   private CountDownTimer countDownTimer;
   private int scrollVelocity = 0;
-  private Button buttonUp;
-  private Button buttonDown;
-  private ScrollView scrollView;
-  private TextView speedText;
-  private TextView textArea;
-  private ToggleButton toggleButton;
   private ScrollHandler scrollHandler = null;
+  private Toast scrollToast = null;
 
+  private ToggleButton toggleButton;
+  private ScrollView scrollView;
+  private TextView textArea;
   /**
    * Prepares resources such as camera view, text view, and graphic overlay.
    * @param savedInstanceState current context
@@ -68,36 +62,30 @@ public class AutoscrollActivity extends AppCompatActivity
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.scrolldebug_layout);
-    //cameraview = (SurfaceView) findViewById(R.id.surfaceView);
     textArea = (TextView) findViewById(R.id.textView);
-    //graphicOverlay = (GraphicOverlay) findViewById(R.id.faceOverlay);
     scrollView = (ScrollView) findViewById(R.id.scrollView);
-    buttonUp = (Button) findViewById(R.id.buttonUp);
-    buttonDown = (Button) findViewById(R.id.buttonDown);
-    buttonUp.setOnClickListener(this);
-    buttonDown.setOnClickListener(this);
     scrollView.setOnTouchListener(touchEvent);
-    speedText = (TextView) findViewById(R.id.speedtextView);
     toggleButton = (ToggleButton) findViewById(R.id.toggleButton);
-    setText();  // debugging purpose (shows scroll speed)
 
 
-    // create a handler for scrolling
-    if (scrollHandler == null) {
-      scrollHandler = new ScrollHandler(this);
-    } else {
-      scrollHandler.setTarget(this);
-    }
 
-    //SurfaceHolder surfaceHolder = cameraview.getHolder();
-    //surfaceHolder.addCallback(this);
+
     String temp = "Lorem ipsum dolor sit amet, vel minimum conceptam constituto eu, cum no iusto doming molestie, te qui vero putent labitur. Justo facete pri no. Labitur dignissim reprimique ne nam, id sit amet interpretaris. Has at ornatus principes elaboraret, ridens fabulas voluptua ne qui, patrioque persequeris efficiantur et nam. Ius audire offendit ne. Pri posse deserunt ad, ius ex minim omittam petentium.\n" +
             "\n" + "Ne has erat aliquando inciderint, cetero placerat ex eos, errem eleifend eam ne. Vel petentium omittantur ex, splendide assentior cu has. Dicat ludus quo ex, no quo amet oratio dissentias. Qui cu tollit integre, omnis erant complectitur eum ut. Graeci integre et quo, vim ut detracto euripidis.\n" +
             "\n" + "Ex facer vitae maiorum est. Habeo splendide moderatius duo id. Quo in viris euripidis. Qui graeci recteque accusamus in, ut qui diam sint, saperet mentitum vel ut.\n" +
             "\n" + "Duo modus nihil eripuit eu, eu malorum labitur consequat mea, veri omnesque patrioque at mea. Vis timeam patrioque id. Nam putant aperiri ad, at assum delectus mea, sonet nominavi periculis sea an. Sit admodum apeirian ex, congue tritani repudiare ei ius. Virtute omittam mea ex, hinc consul cu his, ea dicit homero principes quo. Dicant consul gubergren quo no, ea has sonet salutandi.\n" +
             "\n" + "Ad mea libris blandit adversarium, ignota inermis instructior ei mei, est no causae alienum verterem. An ius dico nobis feugait, scaevola recteque consequat eu cum. Pro ei sale appetere facilisis. Detracto indoctum te quo, discere dolorum impedit no sed. Sea aperiri honestatis ad, eos tale prompta dolorum no.";
     textArea.setText(temp + temp);
+    setFaceDetectScroll();
+  }
 
+  private void setFaceDetectScroll() {
+    // create a handler for scrolling
+    if (scrollHandler == null) {
+      scrollHandler = new ScrollHandler(this);
+    } else {
+      scrollHandler.setTarget(this);
+    }
 
     Context context = getApplicationContext();
 
@@ -152,14 +140,6 @@ public class AutoscrollActivity extends AppCompatActivity
     }
   }
 
-
-  /**
-   * Shows the speed of scrolling (for debugging purposes).
-   */
-  private void setText() {
-    speedText.setText("Scroll speed: " + scrollVelocity);
-  }
-
   /**
    * Set the scroll velocity to a specific value.
    * @param vel velocity value
@@ -190,7 +170,11 @@ public class AutoscrollActivity extends AppCompatActivity
     if (scrollVelocity == 0) {
       return;
     }
-
+    if (scrollToast != null) {
+      scrollToast.cancel();
+    }
+    scrollToast = Toast.makeText(this, "Scroll speed: " + String.valueOf(scrollVelocity), Toast.LENGTH_SHORT);
+    scrollToast.show();
     countDownTimer = new CountDownTimer(MILLIS_IN_FUTURE / Math.abs(scrollVelocity),
         COUNTDOWN_INTERVAL) {
       View view = (View) scrollView.getChildAt(scrollView.getChildCount() - 1);
@@ -208,7 +192,6 @@ public class AutoscrollActivity extends AppCompatActivity
           if (view.getBottom() == (scrollView.getHeight() + scrollView.getScrollY())) {
             Log.d(TAG, "Bottom reached before end");
             setScrollVelocity(0);
-            setText();
             this.cancel();
           }
         } else if (scrollVelocity > 0) {
@@ -218,7 +201,6 @@ public class AutoscrollActivity extends AppCompatActivity
           if (view.getTop() == scrollView.getScrollY()) {
             Log.d(TAG, "Top reached before end");
             setScrollVelocity(0);
-            setText();
             this.cancel();
           }
         }
@@ -238,45 +220,9 @@ public class AutoscrollActivity extends AppCompatActivity
             this.start();
           }
         } else {
-          setText();
         }
       }
     }.start();
-  }
-
-  /**
-   * OnClick listener for the view.
-   * @param clickedView the view that has been clicked
-   */
-  public void onClick(View clickedView) {
-    View view = scrollView.getChildAt(scrollView.getChildCount() - 1);
-    Log.i(TAG, String.valueOf(scrollVelocity));
-    if (view.getBottom() == (scrollView.getHeight() + scrollView.getScrollY())) {
-      setScrollVelocity(0);
-    }
-    if (view.getTop() == scrollView.getScrollY()) {
-      setScrollVelocity(0);
-    }
-    if (countDownTimer != null) {
-      countDownTimer.cancel();
-    }
-
-    switch (clickedView.getId()) {
-      case R.id.buttonUp:
-        scrollVelocity += 3;
-        break;
-      case R.id.buttonDown:
-        scrollVelocity -= 3;
-        break;
-      default:
-        break;
-    }
-    setText();
-    if (scrollVelocity == 0) {
-      return;
-    }
-
-    setNewTimer();
   }
 
   public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
@@ -314,34 +260,17 @@ public class AutoscrollActivity extends AppCompatActivity
    * associated face overlay.
    */
   private class GraphicFaceTracker extends Tracker<Face> {
-    //private GraphicOverlay graphicOverlay;
-    //private FaceGraphic faceGraphic;
-
-    GraphicFaceTracker() {
-    }
-
-    /**
-     * Start tracking the detected face instance within the face overlay.
-     */
-    @Override
-    public void onNewItem(int faceId, Face item) {
-      //faceGraphic.setId(faceId);
-    }
 
     /**
      * Update the position/characteristics of the face within the overlay.
      */
     @Override
     public void onUpdate(FaceDetector.Detections<Face> detectionResults, Face face) {
-      //graphicOverlay.add(faceGraphic);
-      //faceGraphic.updateFace(face);
-
       switch (toggleButton.isChecked() ? 1 : 0) {
         case 0: //Euler
           break;
         case 1: //Wink & Blink
-          final float blinkThresh = 0.55f;  // the threshold of 'blinking'
-
+          final float blinkThresh = 0.40f;  // the threshold of 'blinking'
           // get the screen's view - for getting screen's dimensions
           View view = scrollView.getChildAt(scrollView.getChildCount() - 1);
           // change velocity according to action
@@ -378,24 +307,6 @@ public class AutoscrollActivity extends AppCompatActivity
         default:
           break;
       }
-    }
-
-    /**
-     * Don't do anything when the face doesn't seem to be there only temporarily.
-     * The application needs to keep track of the face until it is sure that
-     * it's gone.
-     */
-    @Override
-    public void onMissing(FaceDetector.Detections<Face> detectionResults) {
-    }
-
-    /**
-     * Called when the face is assumed to be gone for good. Remove the graphic annotation from
-     * the overlay.
-     */
-    @Override
-    public void onDone() {
-      //graphicOverlay.remove(faceGraphic);
     }
   }
 
@@ -446,7 +357,6 @@ public class AutoscrollActivity extends AppCompatActivity
           if (countDownTimer != null) {
             countDownTimer.cancel();
             scrollVelocity = 0;
-            setText();
           }
           return true;
         }
