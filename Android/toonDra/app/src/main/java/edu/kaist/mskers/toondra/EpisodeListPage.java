@@ -63,6 +63,9 @@ public class EpisodeListPage extends AppCompatActivity {
           Element table = wtPage.select("table").get(0);
           Elements rows = table.select("tr");
 
+          Log.e("table", table.toString());
+          Log.e("rows", rows.toString());
+
           if (rows == null) {
             runOnUiThread(new Runnable() {
               @Override
@@ -79,7 +82,9 @@ public class EpisodeListPage extends AppCompatActivity {
           boolean is_latest = true;
           for (int i = 0; i < rows.size(); i++) {
             Element episodeLink = rows.get(i);
+            Log.e("episodeLink", episodeLink.toString());
             Elements cols = episodeLink.select("td");
+            Log.e("cols", cols.toString());
             if (cols.size() == 0) {
               continue;
             }
@@ -95,7 +100,8 @@ public class EpisodeListPage extends AppCompatActivity {
             String description = imgLink.attr("title");
 
             // Check whether imgURL is a valid image file
-            if (imgUrl == null || !imgUrl.endsWith(".jpg")) {
+            if (!nextUrl.toString().contains("no=") || imgUrl == null || !imgUrl.endsWith(".jpg")
+                || !imgUrl.toString().contains("inst_thumbnail")) {
               continue;
             }
 
@@ -115,8 +121,10 @@ public class EpisodeListPage extends AppCompatActivity {
             */
             Bitmap bitmap = BitmapFactory
                 .decodeByteArray(bitmapData, 0, bitmapData.length);
-            
+
+            Log.e("nextUrl", nextUrl);
             String[] st = nextUrl.split("no=");
+            Log.e("st", st[0]);
             int episodeId =  Integer.valueOf(st[1].split("&")[0]);
             if (is_latest) {
               latest_episode = episodeId;

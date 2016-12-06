@@ -141,21 +141,28 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
     int id = item.getItemId();
 
     if (id == R.id.read_eye) {
+      ImageView eye_image = (ImageView)findViewById(R.id.eye_screen_center);
       if (isAutoScroll == false) {
         isAutoScroll = true;
-        findViewById(R.id.eye_screen_center).setVisibility(View.VISIBLE);
-        Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-          @Override
-          public void run() {
-            findViewById(R.id.eye_screen_center).setVisibility(View.INVISIBLE);
-          }
-        }, 1000);
+        item.setIcon(R.drawable.eye_off_menu);
+        eye_image.setImageResource(R.drawable.eye_temp);
+        eye_image.setVisibility(View.VISIBLE);
       }
       else {
         isAutoScroll = false;
+        item.setIcon(R.drawable.eye_menu);
+        eye_image.setImageResource(R.drawable.eye_off_img);
+        eye_image.setVisibility(View.VISIBLE);
       }
-        return true;
+      Handler handler = new Handler();
+      handler.postDelayed(new Runnable() {
+        @Override
+        public void run() {
+          findViewById(R.id.eye_screen_center).setVisibility(View.INVISIBLE);
+        }
+      }, 1000);
+      hideMenus();
+      return true;
     } else if (id == android.R.id.home) {
       finish();
     }
@@ -246,12 +253,16 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
       bottomNavigationView.setVisibility(View.VISIBLE);
       getSupportActionBar().show();
     } else {
-      if (bottomNavigationView.getVisibility() == View.VISIBLE) {
-        bottomNavigationView.setVisibility(View.INVISIBLE);
-      }
-      if (getSupportActionBar().isShowing()) {
-        getSupportActionBar().hide();
-      }
+      hideMenus();
+    }
+  }
+
+  public void hideMenus() {
+    if (bottomNavigationView.getVisibility() == View.VISIBLE) {
+      bottomNavigationView.setVisibility(View.INVISIBLE);
+    }
+    if (getSupportActionBar().isShowing()) {
+      getSupportActionBar().hide();
     }
   }
 }
