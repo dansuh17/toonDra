@@ -77,7 +77,7 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
             getSupportActionBar().hide();
             bottomNavigationView.setVisibility(View.INVISIBLE);
           }
-        }, 1000);
+        }, 2000);
       }
     };
     readLinear.setOnClickListener(onClickListener);

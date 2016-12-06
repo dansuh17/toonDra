@@ -2,6 +2,7 @@ package edu.kaist.mskers.toondra;
 
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -46,10 +47,13 @@ class ThumbnailAdapter extends BaseAdapter {
       //convertView = inflater.inflate(R.layout.thumbnail_custom, null);
     }
     ((Thumbnail)convertView).initView(webtoons[position]);
+    final String listviewUrl = ((Thumbnail)convertView).getListViewUrl();
     convertView.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
         Intent intent = new Intent(context, EpisodeListPage.class);
+        Log.e("listviewUrl_in_grid", listviewUrl);
+        intent.putExtra("listview_url", listviewUrl);
         context.startActivity(intent);
         return;
       }

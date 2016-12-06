@@ -35,7 +35,7 @@ public class EpisodeListPage extends AppCompatActivity {
         WindowManager.LayoutParams.FLAG_FULLSCREEN);
     getSupportActionBar().setTitle("Sample listview from Naver Webtoon");
 
-    String listViewUrl = getIntent().getStringExtra("listview_url");
+    final String listViewUrl = getIntent().getStringExtra("listview_url");
     startListViewUrl(listViewUrl);
   }
 
