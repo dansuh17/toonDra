@@ -1,5 +1,11 @@
 package edu.kaist.mskers.toondra;
 
+import com.google.android.gms.vision.CameraSource;
+import com.google.android.gms.vision.Tracker;
+import com.google.android.gms.vision.face.Face;
+import com.google.android.gms.vision.face.FaceDetector;
+import com.google.android.gms.vision.face.LargestFaceFocusingProcessor;
+
 import android.Manifest;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -28,12 +34,6 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
-
-import com.google.android.gms.vision.CameraSource;
-import com.google.android.gms.vision.Tracker;
-import com.google.android.gms.vision.face.Face;
-import com.google.android.gms.vision.face.FaceDetector;
-import com.google.android.gms.vision.face.LargestFaceFocusingProcessor;
 
 import edu.kaist.mskers.toondra.navermodule.webtoon.NaverWebtoonCrawler;
 
@@ -93,7 +93,9 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
     readLinear = (LinearLayout) findViewById(R.id.readLinear);
     read_url = getIntent().getStringExtra("read_url");
     latest_id = getIntent().getIntExtra("latest_id", 0);
+    Log.e("latest_id", "latest_id: " + latest_id);
     episode_id = getIntent().getIntExtra("episode_id", 0);
+    Log.e("start_id", "start_id: " + episode_id);
     Log.d("readUrl", getIntent().getStringExtra("read_url"));
     readEpisode(read_url + episode_id);
     readScroll = (ScrollViewExt) findViewById(R.id.readScroll);
@@ -139,24 +141,23 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
     bottomNavigationView.setVisibility(View.INVISIBLE);
 
     // resize the text on the bottom
-    SpannableString spanString = new SpannableString(String.valueOf(episode_id));
-    int end = spanString.length();
-    spanString.setSpan(new RelativeSizeSpan(2.0f), 0, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-    BottomNavigationItemView titleItem = (BottomNavigationItemView) findViewById(R.id.bottom_title_text);
-    titleItem.setTitle(spanString);
+    setBigTitle(episode_id);
 
     bottomNavigationView.setOnNavigationItemSelectedListener(
         new BottomNavigationView.OnNavigationItemSelectedListener() {
           @Override
           public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+            Log.e("current episode id: ", ""+episode_id);
             switch (item.getItemId()) {
               case R.id.prev_episode:
                 if (episode_id - 1 <= 0) {
+                  Log.e("read_episode minus", "id: " + episode_id);
                   Toast toast =  Toast.makeText(getApplicationContext(),
                       "이전화가 존재하지 않습니다.", Toast.LENGTH_LONG);
                   toast.show();
                 } else {
                   episode_id -= 1;
+                  setBigTitle(episode_id);
                   readEpisode(read_url + episode_id);
                 }
                 break;
@@ -164,11 +165,13 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
                 break;
               case R.id.next_episode:
                 if (latest_id == episode_id) {
+                  Log.e("read_episode same", "latest id: " + latest_id + " episode_id: " + episode_id);
                   Toast toast =  Toast.makeText(getApplicationContext(),
                       "현재 페이지가 가장 최신화입니다.", Toast.LENGTH_LONG);
                   toast.show();
                 } else {
                   episode_id += 1;
+                  setBigTitle(episode_id);
                   readEpisode(read_url + episode_id);
                 }
                 break;
@@ -267,12 +270,11 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
                 .execute();
 
             byte[] bitmapData = wtRes.bodyAsBytes();
-            /*
+
             BitmapFactory.Options options = new BitmapFactory.Options();;
             options.inSampleSize = 2;
-            */
             Bitmap bitmap = BitmapFactory
-                .decodeByteArray(bitmapData, 0, bitmapData.length);
+                .decodeByteArray(bitmapData, 0, bitmapData.length, options);
 
             final ImageView pageImage = (ImageView)getLayoutInflater().inflate(R.layout.page_custom, null);
 
@@ -318,6 +320,13 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
     }
   }
 
+  public void setBigTitle(int titleId) {
+    SpannableString spanString = new SpannableString(String.valueOf(titleId));
+    int end = spanString.length();
+    spanString.setSpan(new RelativeSizeSpan(2.0f), 0, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+    BottomNavigationItemView titleItem = (BottomNavigationItemView) findViewById(R.id.bottom_title_text);
+    titleItem.setTitle(spanString);
+  }
 
   private void setFaceDetectScroll() {
     // create a handler for scrolling

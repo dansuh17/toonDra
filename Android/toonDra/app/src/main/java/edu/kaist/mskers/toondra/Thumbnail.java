@@ -56,12 +56,18 @@ public class Thumbnail extends FrameLayout {
     thumbImage.setImageBitmap(thumbBimtmap);
   }
 
+  public String getThumbName() {
+    return thumbName.getText().toString();
+  }
   /**
    * Set the thumbnail name.
    */
   private void setThumbName(String name) {
     Log.d("toon name", name);
     thumbName.setText(name);
+    //Setting font separately slows down the app. Need to cache the fonts.
+    //Typeface typeFace=Typeface.createFromAsset(getContext().getAssets(),"fonts/NanumBarunGothicBold.ttf");
+    //thumbName.setTypeface(typeFace);
   }
 
   /**

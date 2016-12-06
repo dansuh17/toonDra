@@ -21,5 +21,6 @@
       android:layout_gravity="center_horizontal"
       android:textStyle="bold"
       android:maxLines="1"
+      android:ellipsize="end"
       android:background="@color/waitButtonColor"/>
 </LinearLayout>

@@ -63,6 +63,7 @@
                 android:text="일"
                 android:id="@+id/button_sun"/>
 
+            <!-- These buttons will be implemented in future
             <Button
                 style="@style/DayButton"
                 android:text="신작"
@@ -72,8 +73,7 @@
                 style="@style/DayButton"
                 android:text="완결"
                 android:id="@+id/button_fin"/>
-
-
+                -->
         </LinearLayout>
 
         <FrameLayout

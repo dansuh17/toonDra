@@ -5,7 +5,10 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.LinearLayout;
@@ -24,8 +27,11 @@ import java.io.IOException;
  * Created by harrykim on 2016. 10. 14..
  */
 
-public class EpisodeListPage extends AppCompatActivity {
+public class EpisodeListPage extends AppCompatActivity implements ScrollViewListener {
   private int latest_episode = 0;
+  private int next_page_episode = -1;
+  private int current_page = 1;
+  private String listViewUrlPrefix = null;
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -33,16 +39,48 @@ public class EpisodeListPage extends AppCompatActivity {
 
     getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
         WindowManager.LayoutParams.FLAG_FULLSCREEN);
-    getSupportActionBar().setTitle("Sample listview from Naver Webtoon");
 
-    final String listViewUrl = getIntent().getStringExtra("listview_url");
-    startListViewUrl(listViewUrl);
+    Toolbar toolbar = (Toolbar) findViewById(R.id.list_toolbar);
+    setSupportActionBar(toolbar);
+    getSupportActionBar().setTitle(getIntent().getStringExtra("webtoon_name"));
+    getSupportActionBar().setHomeButtonEnabled(true);
+    getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+    ScrollViewExt readScroll = (ScrollViewExt) findViewById(R.id.episodeListScroll);
+    readScroll.setScrollViewListener(this);
+
+    listViewUrlPrefix = getIntent().getStringExtra("listview_url");
+    startListViewUrl(listViewUrlPrefix, current_page, true);
+  }
+
+  @Override
+  public boolean onCreateOptionsMenu(Menu menu) {
+    // Inflate the menu; this adds items to the action bar if it is present.
+    //getMenuInflater().inflate(R.menu.read_main_menu, menu);
+    return true;
+  }
+
+  @Override
+  public boolean onOptionsItemSelected(MenuItem item) {
+    // Handle action bar item clicks here. The action bar will
+    // automatically handle clicks on the Home/Up button, so long
+    // as you specify a parent activity in AndroidManifest.xml.
+    int id = item.getItemId();
+    if (id == android.R.id.home) {
+      finish();
+    }
+    return super.onOptionsItemSelected(item);
   }
 
   /**
    * Add the first episode to the right side of the main view by giving first episode url.
    */
-  private void startListViewUrl(final String listViewUrl) {
+  private void startListViewUrl(String listViewUrlPrefix, int pageNumber, final boolean checkLatest) {
+    current_page++;
+    if (!checkLatest) {
+      next_page_episode -= 10;
+    }
+    final String listViewUrl = listViewUrlPrefix + "&page=" + pageNumber;
     final LinearLayout listLinear = (LinearLayout) findViewById(R.id.episodeListLinear);
     Thread pageThread = new Thread(new Runnable() {
       @Override
@@ -127,8 +165,11 @@ public class EpisodeListPage extends AppCompatActivity {
             Log.e("st", st[0]);
             int episodeId =  Integer.valueOf(st[1].split("&")[0]);
             if (is_latest) {
-              latest_episode = episodeId;
-              is_latest = false;
+              if (checkLatest) {
+                latest_episode = episodeId;
+                next_page_episode = latest_episode;
+                is_latest = false;
+              }
             }
             final EpisodeListInstance instance = new EpisodeListInstance(EpisodeListPage.this);
             instance.initView(bitmap, description, nextUrl, episodeId);
@@ -158,5 +199,26 @@ public class EpisodeListPage extends AppCompatActivity {
       }
     });
     pageThread.start();
+  }
+
+  @Override
+  public void onScrollChanged(ScrollViewExt scrollView, int x, int y, int oldx, int oldy) {
+    // We take the last son in the scrollview
+    View view = (View) scrollView.getChildAt(scrollView.getChildCount() - 1);
+    int diff = (view.getBottom() - (scrollView.getHeight() + scrollView.getScrollY()));
+
+    // if diff is zero, then the bottom has been reached
+    if (diff == 0) {
+      // When the next_page episode is on 10, then there would be no next page.
+      if (next_page_episode -10 >= 1) {
+        Log.e("next_page_episode", "" + next_page_episode);
+        startListViewUrl(listViewUrlPrefix, current_page, false);
+        try {
+          Thread.sleep(1500);
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
+    }
   }
 }

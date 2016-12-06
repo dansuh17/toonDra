@@ -102,6 +102,7 @@ public class PreviewModeFragment extends Fragment {
                 Log.e("longClick", "ok");
                 Intent intent = new Intent(getActivity(), EpisodeListPage.class);
                 intent.putExtra("listview_url", thumb.getListViewUrl());
+                intent.putExtra("webtoon_name", thumb.getThumbName());
                 startActivity(intent);
                 return false;
               }

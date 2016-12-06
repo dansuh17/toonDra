@@ -48,12 +48,14 @@ class ThumbnailAdapter extends BaseAdapter {
     }
     ((Thumbnail)convertView).initView(webtoons[position]);
     final String listviewUrl = ((Thumbnail)convertView).getListViewUrl();
+    final String thumbName = ((Thumbnail)convertView).getThumbName();
     convertView.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
         Intent intent = new Intent(context, EpisodeListPage.class);
         Log.e("listviewUrl_in_grid", listviewUrl);
         intent.putExtra("listview_url", listviewUrl);
+        intent.putExtra("webtoon_name", thumbName);
         context.startActivity(intent);
         return;
       }
