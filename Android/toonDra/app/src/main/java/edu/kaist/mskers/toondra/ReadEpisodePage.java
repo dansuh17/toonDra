@@ -62,6 +62,9 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
   private static final int SCROLL_AMOUNT = 1000;
   private static final int BLINK_SCROLL_UP = 0;
   private static final int BLINK_SCROLL_DOWN = 1;
+  private static final int NEXT_EPISODE = 2;
+  private static final int PREVIOUS_EPISODE = 3;
+
   enum BlinkType {
     None, Right, Left, Both;
   }
@@ -69,6 +72,9 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
   private ReadEpisodePage.BlinkType blinkEye = ReadEpisodePage.BlinkType.None;
   private CameraSource cameraSource;
   private CountDownTimer countDownTimer;
+  private Handler actionHandler;
+  private Runnable actionRunnable;
+  private boolean actionPerfomed = false;
   private int scrollVelocity = 0;
   private ReadEpisodePage.ScrollHandler scrollHandler = null;
   private Toast scrollToast = null;
@@ -150,37 +156,60 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
             Log.e("current episode id: ", ""+episode_id);
             switch (item.getItemId()) {
               case R.id.prev_episode:
-                if (episode_id - 1 <= 0) {
-                  Log.e("read_episode minus", "id: " + episode_id);
-                  Toast toast =  Toast.makeText(getApplicationContext(),
-                      "이전화가 존재하지 않습니다.", Toast.LENGTH_LONG);
-                  toast.show();
-                } else {
-                  episode_id -= 1;
-                  setBigTitle(episode_id);
-                  readEpisode(read_url + episode_id);
-                }
+                gotoPreviousEpisode();
                 break;
               case R.id.bottom_title_text:
                 break;
               case R.id.next_episode:
-                if (latest_id == episode_id) {
-                  Log.e("read_episode same", "latest id: " + latest_id + " episode_id: " + episode_id);
-                  Toast toast =  Toast.makeText(getApplicationContext(),
-                      "현재 페이지가 가장 최신화입니다.", Toast.LENGTH_LONG);
-                  toast.show();
-                } else {
-                  episode_id += 1;
-                  setBigTitle(episode_id);
-                  readEpisode(read_url + episode_id);
-                }
+                gotoNextEpisode();
                 break;
             }
             return false;
           }
         });
   }
+  @Override
+  protected void onPause() {
+    super.onPause();
+    if (cameraSource != null) {
+      cameraSource.release();
+    }
+    if (countDownTimer != null) {
+      countDownTimer.cancel();
+    }
+  }
 
+  @Override
+  protected void onResume() {
+    super.onResume();
+    setFaceDetectScroll();
+  }
+
+  private void gotoPreviousEpisode() {
+    if (episode_id - 1 <= 0) {
+      Log.e("read_episode minus", "id: " + episode_id);
+      Toast toast =  Toast.makeText(getApplicationContext(),
+              "이전화가 존재하지 않습니다.", Toast.LENGTH_LONG);
+      toast.show();
+    } else {
+      episode_id -= 1;
+      setBigTitle(episode_id);
+      readEpisode(read_url + episode_id);
+    }
+  }
+
+  private void gotoNextEpisode() {
+    if (latest_id == episode_id) {
+      Log.e("read_episode same", "latest id: " + latest_id + " episode_id: " + episode_id);
+      Toast toast =  Toast.makeText(getApplicationContext(),
+              "현재 페이지가 가장 최신화입니다.", Toast.LENGTH_LONG);
+      toast.show();
+    } else {
+      episode_id += 1;
+      setBigTitle(episode_id);
+      readEpisode(read_url + episode_id);
+    }
+  }
   @Override
   public boolean onCreateOptionsMenu(Menu menu) {
     // Inflate the menu; this adds items to the action bar if it is present.
@@ -340,7 +369,7 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
 
     FaceDetector detector = new FaceDetector.Builder(context)
             .setClassificationType(FaceDetector.ALL_CLASSIFICATIONS)
-            .build();
+            .setMode(FaceDetector.ACCURATE_MODE).build();
     detector.setProcessor(new LargestFaceFocusingProcessor.Builder(detector,
             new ReadEpisodePage.GraphicFaceTracker()).build());
     // create a camera source
@@ -405,7 +434,18 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
     scrollVelocity += amount;
     Log.i(TAG, "ScrollVelocity :" +String.valueOf(scrollVelocity));
   }
+  private void setActivityTimer() {
+    actionPerfomed = true;
+    actionRunnable = new Runnable() {
+      @Override
+      public void run() {
+        actionPerfomed = false;
+      }
+    };
 
+    actionHandler = new Handler();
+    actionHandler.postDelayed(actionRunnable, 1000);
+  }
   /**
    * Sets a new timer that allows scrolling according to the scroll velocity.
    */
@@ -519,39 +559,42 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
         case 0: //Euler
           break;
         case 1: //Wink & Blink
-          final float blinkThresh = 0.20f;  // the threshold of 'blinking'
+          float eulerY = face.getEulerY();
+          final float blinkThresh = 0.30f;  // the threshold of 'blinking'
           // get the screen's view - for getting screen's dimensions
           View view = readScroll.getChildAt(readScroll.getChildCount() - 1);
           // change velocity according to action
           float leftOpen = face.getIsLeftEyeOpenProbability();
           float rightOpen = face.getIsRightEyeOpenProbability();
-          if (leftOpen > blinkThresh && rightOpen < blinkThresh) {
+          if (eulerY > 30) { //Left tilt
+            Log.i("Euler", String.valueOf(eulerY));
+            Message msg = new Message();
+            msg.what = PREVIOUS_EPISODE;
+            scrollHandler.sendMessage(msg);
+          }
+          else if (eulerY < -30) { //Right tilt
+            Log.i("Euler", String.valueOf(eulerY));
+            Message msg = new Message();
+            msg.what = NEXT_EPISODE;
+            scrollHandler.sendMessage(msg);
+          } else if (leftOpen > blinkThresh && rightOpen < blinkThresh) {
             // right blink
             // must modify UI elements through handler because FaceTracker is on a different Thread,
             // and therefore prohibited to modify UI elements.
             if (blinkEye != ReadEpisodePage.BlinkType.Right) {
               blinkEye = ReadEpisodePage.BlinkType.Right;
-              blinkCount = 1;
-            } else {
-              blinkCount ++;
-              if (blinkCount == 3) {
-                Message msg = new Message();
-                msg.what = BLINK_SCROLL_DOWN;
-                scrollHandler.sendMessage(msg);
-              }
+              Message msg = new Message();
+              msg.what = BLINK_SCROLL_DOWN;
+              scrollHandler.sendMessage(msg);
             }
           } else if (leftOpen < blinkThresh && rightOpen > blinkThresh) {
             // left blink
             if (blinkEye != ReadEpisodePage.BlinkType.Left) {
               blinkEye = ReadEpisodePage.BlinkType.Left;
-              blinkCount = 1;
-            } else {
               blinkCount ++;
-              if (blinkCount == 3) {
-                Message msg = new Message();
-                msg.what = BLINK_SCROLL_UP;
-                scrollHandler.sendMessage(msg);
-              }
+              Message msg = new Message();
+              msg.what = BLINK_SCROLL_UP;
+              scrollHandler.sendMessage(msg);
             }
           } else if (leftOpen < blinkThresh && rightOpen < blinkThresh) {
             // both blink
@@ -596,20 +639,28 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
     public void handleMessage(Message msg) {
       super.handleMessage(msg);
       final ReadEpisodePage activity = mainActivityWeakReference.get();
-      Log.i(TAG, "handleMessage");
-
-      switch (msg.what) {
-        case BLINK_SCROLL_UP:
-          activity.addVelocity(6);
-          break;
-        case BLINK_SCROLL_DOWN:
-          activity.addVelocity(-6);
-          break;
-        default:
-          break;
+      Log.i(TAG, String.valueOf(activity.actionPerfomed));
+      if (activity.actionPerfomed == false) {
+        switch (msg.what) {
+          case BLINK_SCROLL_UP:
+            activity.addVelocity(6);
+            activity.setNewTimer();
+            break;
+          case BLINK_SCROLL_DOWN:
+            activity.addVelocity(-6);
+            activity.setNewTimer();
+            break;
+          case PREVIOUS_EPISODE:
+            activity.gotoPreviousEpisode();
+            break;
+          case NEXT_EPISODE:
+            activity.gotoNextEpisode();
+            break;
+          default:
+            break;
+        }
+        activity.setActivityTimer();
       }
-
-      activity.setNewTimer();
     }
   }
 }
