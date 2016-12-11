@@ -33,6 +33,7 @@ public class EpisodeListPage extends AppCompatActivity implements ScrollViewList
   private int current_page = 1;
   private String listViewUrlPrefix = null;
   private Thread pageThread = null;
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -52,6 +53,32 @@ public class EpisodeListPage extends AppCompatActivity implements ScrollViewList
 
     listViewUrlPrefix = getIntent().getStringExtra("listview_url");
     startListViewUrl(listViewUrlPrefix, current_page, true);
+    /*
+    if (pageThread != null) {
+      try {
+        pageThread.join();
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+    }
+    boolean loadNoMore = isScrollable();
+    while (!loadNoMore) {
+      if (next_page_episode - 10 >= 1) {
+        Log.e("next_page_episode", "" + next_page_episode);
+        if (pageThread != null) {
+          try {
+            pageThread.join();
+          } catch (InterruptedException e) {
+            e.printStackTrace();
+          }
+        }
+        startListViewUrl(listViewUrlPrefix, current_page, false);
+        loadNoMore = isScrollable();
+      } else {
+        break;
+      }
+    }
+    */
   }
 
   @Override
@@ -109,7 +136,7 @@ public class EpisodeListPage extends AppCompatActivity implements ScrollViewList
             runOnUiThread(new Runnable() {
               @Override
               public void run() {
-                Toast toast =  Toast.makeText(getApplicationContext(),
+                Toast toast = Toast.makeText(getApplicationContext(),
                     "19세 웹툰 이용을 위해서는 성인 인증이 필요합니다.",
                     Toast.LENGTH_LONG);
                 toast.show();
@@ -129,18 +156,33 @@ public class EpisodeListPage extends AppCompatActivity implements ScrollViewList
             }
 
             Element nextLink = cols.get(0).select("a").first();
+            Log.e("nextLink", nextLink.toString());
             String nextUrl = nextLink.absUrl("href");
+            Log.e("nextUrl", nextLink.toString());
             Element imgLink = cols.get(0).select("a").first().select("img").first();
             if (imgLink == null) {
               continue;
             }
-
             String imgUrl = imgLink.absUrl("src");
+            if (imgUrl == null) {
+              continue;
+            }
             String description = imgLink.attr("title");
+            if (description == null) {
+              continue;
+            }
+            /*
+            Log.e("description", description.toString());
+            Log.e("1", (!nextUrl.toString().contains("no=")) +"");
+            Log.e("2", (imgUrl == null) +"");
+            Log.e("3", (!imgUrl.endsWith(".JPG")) +"");
+            Log.e("4", (!imgUrl.toString().contains("inst_thumbnail")) +"");
+            */
 
             // Check whether imgURL is a valid image file
-            if (!nextUrl.toString().contains("no=") || imgUrl == null || !imgUrl.endsWith(".jpg")
-                || !imgUrl.toString().contains("inst_thumbnail")) {
+            if (!nextUrl.toString().toLowerCase().contains("no=") || imgUrl == null
+                || !imgUrl.toLowerCase().endsWith(".jpg")
+                || !imgUrl.toString().toLowerCase().contains("inst_thumbnail")) {
               continue;
             }
 
@@ -164,7 +206,7 @@ public class EpisodeListPage extends AppCompatActivity implements ScrollViewList
             Log.e("nextUrl", nextUrl);
             String[] st = nextUrl.split("no=");
             Log.e("st", st[0]);
-            int episodeId =  Integer.valueOf(st[1].split("&")[0]);
+            int episodeId = Integer.valueOf(st[1].split("&")[0]);
             if (is_latest) {
               if (checkLatest) {
                 latest_episode = episodeId;
@@ -185,14 +227,33 @@ public class EpisodeListPage extends AppCompatActivity implements ScrollViewList
               }
             });
 
+
+            /*
+            Runnable uiRunnable = new Runnable() {
+              @Override
+              public void run() {
+                listLinear.addView(instance);
+                synchronized (this) {
+                  this.notify();
+                }
+              }
+            };
+            synchronized (uiRunnable) {
+              runOnUiThread(uiRunnable);
+              Log.e("wait for uiRunnable", "dd");
+              uiRunnable.wait();
+            }
+            */
+
+
             runOnUiThread(new Runnable() {
               @Override
               public void run() {
                 listLinear.addView(instance);
               }
             });
-          }
 
+          }
         } catch (IOException ex) {
           ex.printStackTrace();
         }
@@ -211,7 +272,7 @@ public class EpisodeListPage extends AppCompatActivity implements ScrollViewList
     // if diff is zero, then the bottom has been reached
     if (diff == 0) {
       // When the next_page episode is on 10, then there would be no next page.
-      if (next_page_episode -10 >= 1) {
+      if (next_page_episode - 10 >= 1) {
         Log.e("next_page_episode", "" + next_page_episode);
         if (pageThread != null) {
           try {
@@ -231,4 +292,13 @@ public class EpisodeListPage extends AppCompatActivity implements ScrollViewList
       }
     }
   }
+  /*
+  public boolean isScrollable() {
+    ScrollViewExt readScroll = (ScrollViewExt) findViewById(R.id.episodeListScroll);
+    startListViewUrl(listViewUrlPrefix, current_page, true);
+    int childHeight = ((LinearLayout) findViewById(R.id.episodeListLinear)).getHeight();
+    boolean result = readScroll.getHeight() < childHeight + readScroll.getPaddingTop() + readScroll.getPaddingBottom();
+    return result;
+  }
+  */
 }
