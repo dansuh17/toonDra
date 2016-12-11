@@ -47,8 +47,8 @@
       android:layout_height="wrap_content"
       android:layout_gravity="bottom"
       app:itemBackground="@color/colorPrimary"
-      app:itemIconTint="@color/activeButtonColor"
-      app:itemTextColor="@color/activeButtonColor"
+      app:itemIconTint="@color/readPageBottomTextColor"
+      app:itemTextColor="@color/readPageBottomTextColor"
       app:menu="@menu/bottom_navigation_menu" />
 
 

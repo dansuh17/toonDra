@@ -32,6 +32,7 @@ public class EpisodeListPage extends AppCompatActivity implements ScrollViewList
   private int next_page_episode = -1;
   private int current_page = 1;
   private String listViewUrlPrefix = null;
+  private Thread pageThread = null;
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -82,7 +83,7 @@ public class EpisodeListPage extends AppCompatActivity implements ScrollViewList
     }
     final String listViewUrl = listViewUrlPrefix + "&page=" + pageNumber;
     final LinearLayout listLinear = (LinearLayout) findViewById(R.id.episodeListLinear);
-    Thread pageThread = new Thread(new Runnable() {
+    pageThread = new Thread(new Runnable() {
       @Override
       public void run() {
         try {
@@ -212,12 +213,21 @@ public class EpisodeListPage extends AppCompatActivity implements ScrollViewList
       // When the next_page episode is on 10, then there would be no next page.
       if (next_page_episode -10 >= 1) {
         Log.e("next_page_episode", "" + next_page_episode);
+        if (pageThread != null) {
+          try {
+            pageThread.join();
+          } catch (InterruptedException e) {
+            e.printStackTrace();
+          }
+        }
         startListViewUrl(listViewUrlPrefix, current_page, false);
+        /*
         try {
           Thread.sleep(1500);
         } catch (InterruptedException e) {
           e.printStackTrace();
         }
+        */
       }
     }
   }
