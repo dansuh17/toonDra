@@ -84,9 +84,13 @@ public class PreviewModeFragment extends Fragment {
                 if (currentWebtoon != null) {
                   currentWebtoon.thumbName.setBackgroundColor(ContextCompat
                       .getColor(getActivity(), R.color.waitButtonColor));
+                  currentWebtoon.thumbName.setTextColor(ContextCompat
+                      .getColor(getActivity(), R.color.waitTextColor));
                 }
                 thumb.thumbName.setBackgroundColor(ContextCompat
                     .getColor(getActivity(), R.color.activeButtonColor));
+                thumb.thumbName.setTextColor(ContextCompat
+                    .getColor(getActivity(), R.color.activeTextColor));
                 currentWebtoon = thumb;
 
                 if (pageThread != null && pageThread.isAlive()) {

@@ -299,6 +299,8 @@ public class MainActivity extends AppCompatActivity
       if (entry.getKey() == currentDay) {
         entry.getValue().setBackgroundColor(ContextCompat.getColor(getApplicationContext(),
             R.color.activeButtonColor));
+        entry.getValue().setTextColor(ContextCompat.getColor(getApplicationContext(),
+            R.color.activeTextColor));
       }
       entry.getValue().setOnClickListener(new View.OnClickListener() {
         public void onClick(View view) {
@@ -307,8 +309,12 @@ public class MainActivity extends AppCompatActivity
           }
           dayButtonArray.get(dayToIndex(currentDay)).getValue().setBackgroundColor(ContextCompat
               .getColor(getApplicationContext(), R.color.waitButtonColor));
+          dayButtonArray.get(dayToIndex(currentDay)).getValue().setTextColor(ContextCompat
+              .getColor(getApplicationContext(), R.color.waitTextColor));
           entry.getValue().setBackgroundColor(ContextCompat
               .getColor(getApplicationContext(), R.color.activeButtonColor));
+          entry.getValue().setTextColor(ContextCompat
+              .getColor(getApplicationContext(), R.color.activeTextColor));
           setCurrentDay(entry.getKey());
           Log.e("current_day", currentDay.toString());
           addThumbnails();
