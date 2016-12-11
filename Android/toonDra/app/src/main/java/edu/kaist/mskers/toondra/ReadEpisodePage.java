@@ -49,6 +49,7 @@ import java.lang.ref.WeakReference;
  */
 
 public class ReadEpisodePage extends AppCompatActivity implements ScrollViewListener {
+  private Thread pageThread = null;
   private BottomNavigationView bottomNavigationView = null;
   private String read_url = null;
   private int latest_id = 0;
@@ -194,6 +195,15 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
     } else {
       episode_id -= 1;
       setBigTitle(episode_id);
+      if (pageThread != null) {
+        try {
+          pageThread.interrupt();
+          pageThread.join();
+          //Thread.sleep(100);
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
       readEpisode(read_url + episode_id);
     }
   }
@@ -207,6 +217,15 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
     } else {
       episode_id += 1;
       setBigTitle(episode_id);
+      if (pageThread != null) {
+        try {
+          pageThread.interrupt();
+          pageThread.join();
+          //Thread.sleep(100);
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
       readEpisode(read_url + episode_id);
     }
   }
@@ -256,7 +275,7 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
 
   private void readEpisode(final String firstEpisodeUrl) {
     readLinear.removeAllViews();
-    Thread pageThread = new Thread(new Runnable() {
+    pageThread = new Thread(new Runnable() {
       @Override
       public void run() {
         try {
@@ -281,43 +300,80 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
           }
 
           for (Element imgLink : wtViewer.children()) {
-            Log.d("ThumbImgLink", imgLink.toString());
-            String imgUrl = imgLink.absUrl("src");
+            if (!Thread.currentThread().isInterrupted()) {
+              Log.d("ThumbImgLink", imgLink.toString());
+              String imgUrl = imgLink.absUrl("src");
 
-            // Check whether imgURL is a valid image file
-            if (imgUrl == null || !imgUrl.endsWith(".jpg")) {
-              continue;
-            }
-
-            Connection.Response wtRes;
-            wtRes = Jsoup.connect(imgUrl)
-                .userAgent("Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0)"
-                    + "Gecko/20100101 Firefox/23.0")
-                .referrer(firstEpisodeUrl)
-                .ignoreContentType(true)
-                .maxBodySize(NaverWebtoonCrawler.MAX_DOWNLOAD_SIZE_BYTES)
-                .execute();
-
-            byte[] bitmapData = wtRes.bodyAsBytes();
-
-            BitmapFactory.Options options = new BitmapFactory.Options();;
-            options.inSampleSize = 2;
-            Bitmap bitmap = BitmapFactory
-                .decodeByteArray(bitmapData, 0, bitmapData.length, options);
-
-            final ImageView pageImage = (ImageView)getLayoutInflater().inflate(R.layout.page_custom, null);
-
-            pageImage.setImageBitmap(bitmap);
-            runOnUiThread(new Runnable() {
-              @Override
-              public void run() {
-                readLinear.addView(pageImage);
+              // Check whether imgURL is a valid image file
+              if (imgUrl == null || !imgUrl.endsWith(".jpg")) {
+                continue;
               }
-            });
+
+              Connection.Response wtRes;
+              wtRes = Jsoup.connect(imgUrl)
+                  .userAgent("Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0)"
+                      + "Gecko/20100101 Firefox/23.0")
+                  .referrer(firstEpisodeUrl)
+                  .ignoreContentType(true)
+                  .maxBodySize(NaverWebtoonCrawler.MAX_DOWNLOAD_SIZE_BYTES)
+                  .execute();
+
+              byte[] bitmapData = wtRes.bodyAsBytes();
+
+              BitmapFactory.Options options = new BitmapFactory.Options();
+              ;
+              options.inSampleSize = 2;
+              Bitmap bitmap = BitmapFactory
+                  .decodeByteArray(bitmapData, 0, bitmapData.length, options);
+
+              final ImageView pageImage = (ImageView) getLayoutInflater().inflate(R.layout.page_custom, null);
+
+              pageImage.setImageBitmap(bitmap);
+              Runnable uiRunnable = new Runnable() {
+                @Override
+                public void run() {
+                  readLinear.addView(pageImage);
+                  synchronized ( this )
+                  {
+                    this.notify();
+                  }
+                }
+              };
+              synchronized (uiRunnable) {
+                runOnUiThread(uiRunnable);
+                Log.e("wait for uiRunnable", "dd");
+                uiRunnable.wait();
+              }
+              /*
+              runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                  readLinear.addView(pageImage);
+                  synchronized ( this )
+                  {
+                    this.notify();
+                  }
+                }
+              });
+              */
+            } else {
+              Log.e("Interruption: ", Thread.currentThread().toString());
+              break;
+            }
           }
 
         } catch (IOException ex) {
+          Log.e("IOExcetipn: ", ex.toString());
           ex.printStackTrace();
+        } catch (InterruptedException ex) {
+          Log.e("Interruption: ", ex.toString());
+          ex.printStackTrace();
+          try {
+            Thread.sleep(1000);
+          } catch (InterruptedException e) {
+            Log.e("Interruption Again: ", e.toString());
+            e.printStackTrace();
+          }
         }
 
       }
