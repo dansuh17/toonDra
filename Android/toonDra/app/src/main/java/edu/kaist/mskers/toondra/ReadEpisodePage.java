@@ -29,6 +29,8 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
@@ -48,8 +50,8 @@ import java.lang.ref.WeakReference;
  * Created by harrykim on 2016. 10. 14..
  */
 
-public class ReadEpisodePage extends AppCompatActivity implements ScrollViewListener {
-  private Thread pageThread = null;
+public class ReadEpisodePage extends AppCompatActivity implements ScrollViewListener  {
+
   private BottomNavigationView bottomNavigationView = null;
   private String read_url = null;
   private int latest_id = 0;
@@ -80,6 +82,9 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
   private ReadEpisodePage.ScrollHandler scrollHandler = null;
   private Toast scrollToast = null;
   private ScrollViewExt readScroll;
+  private SurfaceView cameraPreview;
+  private boolean cameraStatus = false;
+  private Thread pageThread = null;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -97,6 +102,7 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
     getSupportActionBar().hide();
     findViewById(R.id.eye_screen_center).setVisibility(View.INVISIBLE);
 
+    cameraPreview = (SurfaceView) findViewById(R.id.camera_preview);
     readLinear = (LinearLayout) findViewById(R.id.readLinear);
     read_url = getIntent().getStringExtra("read_url");
     latest_id = getIntent().getIntExtra("latest_id", 0);
@@ -107,6 +113,11 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
     readEpisode(read_url + episode_id);
     readScroll = (ScrollViewExt) findViewById(R.id.readScroll);
     readScroll.setScrollViewListener(this);
+    if (scrollHandler == null) {
+      scrollHandler = new ReadEpisodePage.ScrollHandler(this);
+    } else {
+      scrollHandler.setTarget(this);
+    }
     setFaceDetectScroll();
     View.OnTouchListener onTouchListener = new View.OnTouchListener() {
       @Override
@@ -242,7 +253,6 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
     // automatically handle clicks on the Home/Up button, so long
     // as you specify a parent activity in AndroidManifest.xml.
     int id = item.getItemId();
-
     if (id == R.id.read_eye) {
       ImageView eye_image = (ImageView)findViewById(R.id.eye_screen_center);
       if (isAutoScroll == false) {
@@ -268,6 +278,20 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
       return true;
     } else if (id == android.R.id.home) {
       finish();
+    } else if (id == R.id.camera_enable) {
+      if (cameraStatus == false) {
+        cameraStatus = true;
+        cameraPreview.setVisibility(cameraPreview.VISIBLE);
+        cameraSource.release();
+        setFaceDetectScroll();
+      }
+      else {
+        cameraStatus = false;
+        cameraPreview.setVisibility(cameraPreview.INVISIBLE);
+        cameraSource.release();
+        setFaceDetectScroll();
+      }
+      hideMenus();
     }
 
     return super.onOptionsItemSelected(item);
@@ -415,14 +439,7 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
 
   private void setFaceDetectScroll() {
     // create a handler for scrolling
-    if (scrollHandler == null) {
-      scrollHandler = new ReadEpisodePage.ScrollHandler(this);
-    } else {
-      scrollHandler.setTarget(this);
-    }
-
     Context context = getApplicationContext();
-
     FaceDetector detector = new FaceDetector.Builder(context)
             .setClassificationType(FaceDetector.ALL_CLASSIFICATIONS)
             .setMode(FaceDetector.ACCURATE_MODE).build();
@@ -465,7 +482,12 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
 
       // If explicit permission request is unnecessary, proceed with using camera.
       try {
-        cameraSource.start();
+        if (cameraStatus) {
+          cameraSource.start(cameraPreview.getHolder());
+        }
+        else {
+          cameraSource.start();
+        }
 
       } catch (IOException ioe) {
         Log.e(TAG, "Unable to start camera source.", ioe);

@@ -29,6 +29,12 @@
         android:clickable="true">
     </LinearLayout>
   </edu.kaist.mskers.toondra.ScrollViewExt>
+  <SurfaceView
+      android:id="@+id/camera_preview"
+      android:layout_width="480px"
+      android:layout_height="640px"
+      android:layout_gravity="right"
+      android:visibility="invisible"/>
   <ImageView
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"

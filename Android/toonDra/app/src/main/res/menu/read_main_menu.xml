@@ -7,6 +7,10 @@
         android:title="before_page"
         app:showAsAction="always"/>
         -->
+  <item android:id="@+id/camera_enable"
+      android:icon="@drawable/camera_icon"
+      android:title="eye scroll"
+      app:showAsAction="always"/>
   <item android:id="@+id/read_eye"
         android:icon="@drawable/eye_menu"
         android:title="eye scroll"
