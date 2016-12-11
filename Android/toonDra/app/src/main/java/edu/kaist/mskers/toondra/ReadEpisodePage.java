@@ -66,6 +66,8 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
   private static final int BLINK_SCROLL_DOWN = 1;
   private static final int NEXT_EPISODE = 2;
   private static final int PREVIOUS_EPISODE = 3;
+  private Handler menuHandler = null;
+  private Handler eyeHandler = null;
 
   enum BlinkType {
     None, Right, Left, Both;
@@ -141,8 +143,11 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
       public void onClick(View view) {
         getSupportActionBar().show();
         bottomNavigationView.setVisibility(View.VISIBLE);
-        Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
+        if (menuHandler != null && menuHandler.hasMessages(0)) {
+          menuHandler.removeMessages(0);
+        }
+        menuHandler = new Handler();
+        menuHandler.postDelayed(new Runnable() {
           @Override
           public void run() {
             getSupportActionBar().hide();
@@ -266,8 +271,11 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
         eye_image.setImageResource(R.drawable.eye_off_img);
         eye_image.setVisibility(View.VISIBLE);
       }
-      Handler handler = new Handler();
-      handler.postDelayed(new Runnable() {
+      if (eyeHandler != null && eyeHandler.hasMessages(0)) {
+        eyeHandler.removeMessages(0);
+      }
+      eyeHandler = new Handler();
+      eyeHandler.postDelayed(new Runnable() {
         @Override
         public void run() {
           findViewById(R.id.eye_screen_center).setVisibility(View.INVISIBLE);

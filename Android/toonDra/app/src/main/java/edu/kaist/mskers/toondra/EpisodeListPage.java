@@ -245,7 +245,7 @@ public class EpisodeListPage extends AppCompatActivity implements ScrollViewList
             }
             */
 
-            
+
             runOnUiThread(new Runnable() {
               @Override
               public void run() {
