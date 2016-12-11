@@ -15,11 +15,9 @@ import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.os.Bundle;
 import android.os.SystemClock;
-import android.support.design.widget.NavigationView;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -36,8 +34,8 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Map;
 
-public class MainActivity extends AppCompatActivity
-    implements NavigationView.OnNavigationItemSelectedListener {
+public class MainActivity extends AppCompatActivity {
+    //implements NavigationView.OnNavigationItemSelectedListener {
 
   private ArrayList<Map.Entry<Day, Button>> dayButtonArray = new ArrayList<>();
   private NaverToonInfo[][] webtoonInfoByDay = new NaverToonInfo[7][];
@@ -61,19 +59,19 @@ public class MainActivity extends AppCompatActivity
     Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
     setSupportActionBar(toolbar);
 
+    /* Navigation view is not used currently.
     DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
     ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
         this, drawer, toolbar, R.string.navigation_drawer_open,
         R.string.navigation_drawer_close);
     drawer.addDrawerListener(toggle);
     toggle.syncState();
-
     NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
     navigationView.setNavigationItemSelectedListener(this);
 
     //Hide Navigation bar now. It will be implemented in future.
     toolbar.setNavigationIcon(null);
-
+    */
     downloadAllWebtoons();
 
     setRealCurrentDay();
@@ -115,6 +113,7 @@ public class MainActivity extends AppCompatActivity
     return super.onOptionsItemSelected(item);
   }
 
+  /* Navigation view is not used currently
   @SuppressWarnings("StatementWithEmptyBody")
   @Override
   public boolean onNavigationItemSelected(MenuItem item) {
@@ -139,6 +138,7 @@ public class MainActivity extends AppCompatActivity
     drawer.closeDrawer(GravityCompat.START);
     return true;
   }
+  */
 
   /**
    * Get the current day which is selected by the user, default is real-time current day.
