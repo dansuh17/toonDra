@@ -29,7 +29,6 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
-import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
@@ -45,10 +44,8 @@ import org.jsoup.nodes.Element;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-
-/**
- * Created by harrykim on 2016. 10. 14..
- */
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class ReadEpisodePage extends AppCompatActivity implements ScrollViewListener  {
 
@@ -62,16 +59,18 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
   private static final int MY_PERMISSIONS_USE_CAMERA = 1;
   private static final long MILLIS_IN_FUTURE = 10000;
   private static final long COUNTDOWN_INTERVAL = 20;
+  private static final long TIMER_DELAY = 250;
   private static final int SCROLL_AMOUNT = 1000;
   private static final int BLINK_SCROLL_UP = 0;
   private static final int BLINK_SCROLL_DOWN = 1;
   private static final int NEXT_EPISODE = 2;
   private static final int PREVIOUS_EPISODE = 3;
+  private static final int SCROLL_PAUSE = 4;
 
   enum BlinkType {
-    None, Right, Left, Both;
+    None, Right, Left, Both
   }
-  private int blinkCount = 0;
+
   private ReadEpisodePage.BlinkType blinkEye = ReadEpisodePage.BlinkType.None;
   private CameraSource cameraSource;
   private CountDownTimer countDownTimer;
@@ -85,6 +84,9 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
   private SurfaceView cameraPreview;
   private boolean cameraStatus = false;
   private Thread pageThread = null;
+  private Timer timer = null;
+  private TimerWakeupTask timerWakeupTask = null;
+  private boolean timerIsSet;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -179,6 +181,9 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
             return false;
           }
         });
+
+    // initialize timer
+    timerIsSet = false;
   }
   @Override
   protected void onPause() {
@@ -255,13 +260,12 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
     int id = item.getItemId();
     if (id == R.id.read_eye) {
       ImageView eye_image = (ImageView)findViewById(R.id.eye_screen_center);
-      if (isAutoScroll == false) {
+      if (!isAutoScroll) {
         isAutoScroll = true;
         item.setIcon(R.drawable.eye_off_menu);
         eye_image.setImageResource(R.drawable.eye_temp);
         eye_image.setVisibility(View.VISIBLE);
-      }
-      else {
+      } else {
         isAutoScroll = false;
         item.setIcon(R.drawable.eye_menu);
         eye_image.setImageResource(R.drawable.eye_off_img);
@@ -279,13 +283,12 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
     } else if (id == android.R.id.home) {
       finish();
     } else if (id == R.id.camera_enable) {
-      if (cameraStatus == false) {
+      if (!cameraStatus) {
         cameraStatus = true;
         cameraPreview.setVisibility(cameraPreview.VISIBLE);
         cameraSource.release();
         setFaceDetectScroll();
-      }
-      else {
+      } else {
         cameraStatus = false;
         cameraPreview.setVisibility(cameraPreview.INVISIBLE);
         cameraSource.release();
@@ -368,18 +371,6 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
                 Log.e("wait for uiRunnable", "dd");
                 uiRunnable.wait();
               }
-              /*
-              runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                  readLinear.addView(pageImage);
-                  synchronized ( this )
-                  {
-                    this.notify();
-                  }
-                }
-              });
-              */
             } else {
               Log.e("Interruption: ", Thread.currentThread().toString());
               break;
@@ -408,7 +399,7 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
   @Override
   public void onScrollChanged(ScrollViewExt scrollView, int x, int y, int oldx, int oldy) {
     // We take the last son in the scrollview
-    View view = (View) scrollView.getChildAt(scrollView.getChildCount() - 1);
+    View view = scrollView.getChildAt(scrollView.getChildCount() - 1);
     int diff = (view.getBottom() - (scrollView.getHeight() + scrollView.getScrollY()));
 
     // if diff is zero, then the bottom has been reached
@@ -586,7 +577,6 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
             beginScrollY = readScroll.getScrollY();
             this.start();
           }
-        } else {
         }
       }
     }.start();
@@ -639,59 +629,97 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
         case 1: //Wink & Blink
           float eulerY = face.getEulerY();
           final float blinkThresh = 0.30f;  // the threshold of 'blinking'
-          // get the screen's view - for getting screen's dimensions
-          View view = readScroll.getChildAt(readScroll.getChildCount() - 1);
-          // change velocity according to action
+          final int eulerYThresh = 30;
           float leftOpen = face.getIsLeftEyeOpenProbability();
           float rightOpen = face.getIsRightEyeOpenProbability();
-          if (eulerY > 30) { //Left tilt
+
+          // Actions depending on the detected face parameters
+          if (eulerY > eulerYThresh) {  // Left tilt
             Log.i("Euler", String.valueOf(eulerY));
             Message msg = new Message();
             msg.what = PREVIOUS_EPISODE;
             scrollHandler.sendMessage(msg);
           }
-          else if (eulerY < -30) { //Right tilt
+          else if (eulerY < -eulerYThresh) {  // Right tilt
             Log.i("Euler", String.valueOf(eulerY));
             Message msg = new Message();
             msg.what = NEXT_EPISODE;
             scrollHandler.sendMessage(msg);
-          } else if (leftOpen > blinkThresh && rightOpen < blinkThresh) {
-            // right blink
-            // must modify UI elements through handler because FaceTracker is on a different Thread,
-            // and therefore prohibited to modify UI elements.
-            if (blinkEye != ReadEpisodePage.BlinkType.Right) {
-              blinkEye = ReadEpisodePage.BlinkType.Right;
-              Message msg = new Message();
-              msg.what = BLINK_SCROLL_DOWN;
-              scrollHandler.sendMessage(msg);
-            }
-          } else if (leftOpen < blinkThresh && rightOpen > blinkThresh) {
-            // left blink
-            if (blinkEye != ReadEpisodePage.BlinkType.Left) {
-              blinkEye = ReadEpisodePage.BlinkType.Left;
-              blinkCount ++;
-              Message msg = new Message();
-              msg.what = BLINK_SCROLL_UP;
-              scrollHandler.sendMessage(msg);
-            }
-          } else if (leftOpen < blinkThresh && rightOpen < blinkThresh) {
-            // both blink
-            if (blinkEye != ReadEpisodePage.BlinkType.Both) {
-              blinkEye = ReadEpisodePage.BlinkType.Both;
-              blinkCount = 1;
-            } else {
-              blinkCount ++;
-              if (blinkCount == 3) {
-                setScrollVelocity(0);
-              }
-            }
-          } else {
+          } else if (leftOpen > blinkThresh && rightOpen < blinkThresh) {  // right blink
+            actionTimer(BlinkType.Right);
+          } else if (leftOpen < blinkThresh && rightOpen > blinkThresh) {  // left blink
+            actionTimer(BlinkType.Left);
+          } else if (leftOpen < blinkThresh && rightOpen < blinkThresh) {  // both blink
+            actionTimer(BlinkType.Both);
+          } else {  // both open
             blinkEye = ReadEpisodePage.BlinkType.None;
+            timerIsSet = false;
           }
           break;
         default:
           break;
       }
+    }
+
+    // gives a timer buffer - the user has to be still performing the action
+    // for a given amount of time
+    void actionTimer(BlinkType blinkType) {
+      // schedule new task only when the already scheduled task is different from new one,
+      // or when the timer is off.
+      if (timerIsSet) {
+        if (!timerWakeupTask.isActionEqual(blinkType)) {
+          timer = new Timer();
+          timerWakeupTask = new TimerWakeupTask(blinkType);
+          timer.schedule(timerWakeupTask, TIMER_DELAY);
+        }
+      } else {
+        timer = new Timer();
+        timerWakeupTask = new TimerWakeupTask(blinkType);
+        timer.schedule(timerWakeupTask, TIMER_DELAY);
+        timerIsSet = true;
+      }
+    }
+  }
+
+  /**
+   * TimeTask extension to send the message handler to scroll / move episodes
+   * according to the blink type after the Timer wakes up.
+   */
+  private class TimerWakeupTask extends TimerTask {
+    private BlinkType blinkType;
+
+    TimerWakeupTask(BlinkType type) {
+      blinkType = type;
+    }
+
+    public void run() {
+      Log.e("WakeupTask", blinkType.toString());
+      Message msg = new Message();
+
+      // determine the message type based on the blink type
+      switch (blinkType) {
+        case Right:
+          msg.what = BLINK_SCROLL_DOWN;
+          break;
+        case Left:
+          msg.what = BLINK_SCROLL_UP;
+          break;
+        case Both:
+          msg.what = SCROLL_PAUSE;
+          break;
+        case None:
+          timerIsSet = false;
+          return;
+        default:
+          break;
+      }
+      scrollHandler.sendMessage(msg);
+      timerIsSet = false;
+    }
+
+    // Determines whether the scheduled task is equal to requested task
+    boolean isActionEqual(BlinkType type) {
+      return blinkType == type;
     }
   }
 
@@ -708,7 +736,7 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
       mainActivityWeakReference = new WeakReference<>(target);
     }
 
-    public void setTarget(ReadEpisodePage target) {
+    void setTarget(ReadEpisodePage target) {
       mainActivityWeakReference.clear();
       mainActivityWeakReference = new WeakReference<>(target);
     }
@@ -718,7 +746,7 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
       super.handleMessage(msg);
       final ReadEpisodePage activity = mainActivityWeakReference.get();
       Log.i(TAG, String.valueOf(activity.actionPerfomed));
-      if (activity.actionPerfomed == false) {
+      if (!activity.actionPerfomed) {
         switch (msg.what) {
           case BLINK_SCROLL_UP:
             activity.addVelocity(6);
@@ -733,6 +761,9 @@ public class ReadEpisodePage extends AppCompatActivity implements ScrollViewList
             break;
           case NEXT_EPISODE:
             activity.gotoNextEpisode();
+            break;
+          case SCROLL_PAUSE:
+            activity.setScrollVelocity(0);
             break;
           default:
             break;
